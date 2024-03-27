@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    volumes:
+      - ./:/quasar
+    ports:
+      - 9400:9400
+    command: quasar dev -m pwa
+    restart: always

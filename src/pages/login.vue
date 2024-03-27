@@ -1,0 +1,144 @@
+<template>
+  <q-page class="flex flex-center column">
+    <!-- <div> Sign in with Apple</div> -->
+    <div class="flex column justify-between" style="height: 120px">
+      <div id="g_id_signin" v-if="showSSO"></div>
+    </div>
+    <q-page-sticky position="top-right" :offset="[18, 18]">
+      <div id="loginPage" />
+    </q-page-sticky>
+  </q-page>
+</template>
+
+<script>
+import { defineComponent, ref, onMounted, computed } from "vue";
+import { api, baseURL } from "boot/axios";
+import { useQuasar } from "quasar";
+import { setToken, checkLogin } from "boot/account";
+import { useLoginStore } from "stores/token";
+import { useRouter, useRoute } from "vue-router";
+
+export default defineComponent({
+  name: "LoginPage",
+  components: {
+    // VueAppleLogin,
+  },
+  setup() {
+    const $q = useQuasar();
+    const route = useRoute();
+    const showSSO = ref(true);
+
+    const loginStore = useLoginStore();
+
+    async function AppleSignIn() {
+      // login(succ, "apple");
+      try {
+        const succ = await AppleID.auth.signIn();
+        // console.log(succ);
+        // login(succ, "apple");
+      } catch (error) {
+        //handle error.
+        console.log(error);
+      }
+    }
+
+    async function googleAuth(evt) {
+      // console.log(evt);
+      await login(evt, "google");
+    }
+
+    async function login(resp, iss) {
+      try {
+        $q.loading.show();
+        const post = await api.post("login", {
+          resp: resp,
+          iss: iss,
+        });
+        const { data } = post;
+        // console.log(data);
+        setToken(data.ltt, data.stt);
+        // location.reload();
+        loginStore.setValue(
+          true,
+          JSON.parse(atob(data.stt.split(".")[1])).username
+        );
+        $q.loading.hide();
+        toProjectPage();
+      } catch (error) {
+        $q.loading.hide();
+        $q.notify({
+          position: "top",
+          message: error.toString(),
+          type: "negative",
+        });
+        console.log("err", error);
+      }
+    }
+
+    function toProjectPage() {
+      const link = document.createElement("a");
+      link.href = window.location.hash.split("/")[0] + "/scene";
+      link.click();
+    }
+
+    function googleInit() {
+      if (window.google) {
+        google.accounts.id.initialize({
+          client_id:
+            "48299599921-oghrh3htslmgsccnavcdv60mm3k8i5tn.apps.googleusercontent.com",
+          callback: googleAuth,
+          auto_select: true,
+          itp_support: true,
+          prompt_parent_id: "loginPage",
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("g_id_signin"),
+          {
+            theme: "filled_blue",
+            size: "large",
+          }
+        );
+      } else {
+        setTimeout(googleInit, 500);
+      }
+    }
+
+    onMounted(async () => {
+      if (route.params.id_token) {
+        await login({ identityToken: route.params.id_token }, "apple");
+      }
+
+      if (await checkLogin(true)) {
+        toProjectPage();
+      } else {
+        try {
+          googleInit();
+        } catch (error) {
+          $q.notify({
+            position: "top",
+            message: error.toString(),
+            type: "negative",
+          });
+        }
+        google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            console.log(notification);
+          }
+        });
+      }
+    });
+
+    return {
+      AppleSignIn,
+      isPwd: ref(true),
+      showSSO,
+    };
+  },
+});
+</script>
+<style data-type="scss">
+.signin-button {
+  width: 210px;
+  height: 40px;
+}
+</style>
