@@ -1,6 +1,6 @@
-# Auto Report (auto-report)
+# 小智醫師 (SmartDoc)
 
-Auto Report with ASR and LLM
+SmartDoc with ASR and LLM
 
 ## Install the dependencies
 ```bash
