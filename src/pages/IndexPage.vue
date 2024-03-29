@@ -710,7 +710,7 @@ export default defineComponent({
     const filteredPromptOptions = ref([]);
     const llmOptions = ref([]);
     const llmModel = ref("gpt-4");
-    const replyTokens = ref(500);
+    const replyTokens = ref(1000);
     const replyTokens_mark_labels = ref([]);
     const replyTokens_maxTokens = ref(3000);
     const llmResult = ref("");

@@ -117,7 +117,7 @@ export default defineComponent({
     const username = computed(() => loginStore.user);
     const userSetting = ref(false);
 
-    const replyTokens = ref(500);
+    const replyTokens = ref(1000);
 
     function wsConnect(username) {
       var ws = new ReconnectingWebSocket(
