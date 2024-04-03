@@ -122,11 +122,11 @@
                 style="height: 0px; width: 0px; visibility: hidden"
                 accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
               />
-              <q-toggle
+              <!-- <q-toggle
                 label="即時辨識"
                 v-model="keepAliveAsr"
                 :disable="keepAliveAsrDisabled"
-              />
+              /> -->
               <div v-if="recording" class="text-h6 q-ml-md">
                 {{ recordDuration }}
               </div>
@@ -620,6 +620,7 @@ import emoji from "markdown-it-emoji";
 import markdownItMark from "markdown-it-mark";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
+import mime from "mime-types";
 
 export default defineComponent({
   name: "IndexPage",
@@ -658,13 +659,14 @@ export default defineComponent({
     const scene_label = ref(null);
     let mediaRecorder = null;
     let stream = null;
+    let chunks = [];
     const trigger = ref(false);
     let voiced_frames = [];
     const timeSlice = 100;
-    const padding_ms = 500;
+    const padding_ms = 1000;
     const dequeMaxLength = Math.floor(padding_ms / timeSlice);
     const ring_buffer = new Deque(dequeMaxLength);
-    const maxFrameLength = Math.floor(10000 / timeSlice);
+    const maxFrameLength = Math.floor(20000 / timeSlice);
     const seg = ref([]);
     let wakeLock = null;
     var mediaTimer = null;
@@ -1393,6 +1395,8 @@ export default defineComponent({
           throw Error(error);
         }
 
+        chunks = [];
+
         const VAD = await VADBuilder();
         const vad = new VAD(VADMode.VERY_AGGRESSIVE, 16000);
 
@@ -1408,72 +1412,154 @@ export default defineComponent({
           sttResult.value = "";
           unSave.value.asrResult = true;
         }
-        mediaRecorder = new RecordRTCPromisesHandler(stream, {
-          type: "audio",
-          recorderType: StereoAudioRecorder,
-          desiredSampRate: 16000,
-          mimeType: "audio/wav",
-          timeSlice: timeSlice,
-          ondataavailable: async function (event) {
-            if (keepAliveAsr.value) {
-              const audioData = await event.arrayBuffer();
-              // console.log(audioData);
-              const frame = new Int16Array(audioData);
-              const res = vad.processBuffer(frame);
+        // mediaRecorder = new RecordRTCPromisesHandler(stream, {
+        //   type: "audio",
+        //   recorderType: StereoAudioRecorder,
+        //   desiredSampRate: 16000,
+        //   mimeType: "audio/wav",
+        //   timeSlice: timeSlice,
+        //   numberOfAudioChannels: 1,
+        //   ondataavailable: async function (event) {
+        //     // chunks.push(audioData);
+        //     if (keepAliveAsr.value) {
+        //       const audioData = await event.arrayBuffer();
+        //       // console.log(audioData);
+        //       const frame = new Int16Array(audioData);
+        //       const res = vad.processBuffer(frame);
 
-              if (!trigger.value) {
-                ring_buffer.push({
-                  frame: audioData,
-                  is_speech: res,
-                });
-                let num_voiced = ring_buffer.deque.filter(
-                  (item) => item.is_speech == 1
-                ).length;
-                if (num_voiced > 0.9 * dequeMaxLength) {
-                  trigger.value = true;
-                  ring_buffer.deque.forEach((e) => {
-                    voiced_frames.push(e.frame);
-                  });
-                  console.log("Trigger On", voiced_frames.length);
-                  ring_buffer.clear();
-                }
-              } else {
-                voiced_frames.push(audioData);
-                ring_buffer.push({
-                  frame: audioData,
-                  is_speech: res,
-                });
-                let num_unvoiced = ring_buffer.deque.filter(
-                  (item) => item.is_speech == 0
-                ).length;
-                if (num_unvoiced > 0.9 * dequeMaxLength) {
-                  trigger.value = false;
-                  console.log("Trigger Off", voiced_frames.length);
-                  console.log("send voice");
-                  var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-                  // console.log(blob, len);
-                  VAD_ASR(blob);
-                  // var url = URL.createObjectURL(blob);
-                  // seg.value.push({
-                  //   length: len,
-                  //   url: url,
-                  // });
-                  ring_buffer.clear();
-                  voiced_frames = [];
-                }
-              }
-              if (voiced_frames.length > maxFrameLength) {
-                var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-                VAD_ASR(blob);
-                voiced_frames = [];
-              }
-            }
-          },
+        //       if (!trigger.value) {
+        //         ring_buffer.push({
+        //           frame: audioData,
+        //           is_speech: res,
+        //         });
+        //         let num_voiced = ring_buffer.deque.filter(
+        //           (item) => item.is_speech == 1
+        //         ).length;
+        //         console.log("voiced", num_voiced / dequeMaxLength);
+        //         if (num_voiced > 0.9 * dequeMaxLength) {
+        //           trigger.value = true;
+        //           ring_buffer.deque.forEach((e) => {
+        //             voiced_frames.push(e.frame);
+        //           });
+        //           console.log("Trigger On", voiced_frames.length);
+        //           ring_buffer.clear();
+        //         }
+        //       } else {
+        //         voiced_frames.push(audioData);
+        //         ring_buffer.push({
+        //           frame: audioData,
+        //           is_speech: res,
+        //         });
+        //         let num_unvoiced = ring_buffer.deque.filter(
+        //           (item) => item.is_speech == 0
+        //         ).length;
+        //         console.log("unvoiced", num_unvoiced / dequeMaxLength);
+        //         if (num_unvoiced > 0.9 * dequeMaxLength) {
+        //           trigger.value = false;
+        //           console.log("Trigger Off", voiced_frames.length);
+        //           console.log("send voice");
+        //           var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
+        //           // console.log(blob, len);
+        //           VAD_ASR(blob);
+        //           // var url = URL.createObjectURL(blob);
+        //           // seg.value.push({
+        //           //   length: len,
+        //           //   url: url,
+        //           // });
+        //           ring_buffer.clear();
+        //           voiced_frames = [];
+        //         }
+        //       }
+        //       if (voiced_frames.length > maxFrameLength) {
+        //         var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
+        //         VAD_ASR(blob);
+        //         voiced_frames = [];
+        //       }
+        //     }
+        //   },
+        // });
+        mediaRecorder = new MediaRecorder(stream, {
+          // mimeType: "audio/ogg",
+          audioBitsPerSecond: 16000,
         });
         recording.value = true;
         dateStarted = new Date().getTime();
         recordDuration.value = "00:00";
-        mediaRecorder.startRecording();
+
+        // mediaRecorder.startRecording();
+        mediaRecorder.start(timeSlice);
+        console.log(mediaRecorder.state);
+        console.log(
+          mediaRecorder.audioBitsPerSecond,
+          mediaRecorder.bitsPerSecond
+        );
+        console.log("Recorder started.");
+
+        mediaRecorder.ondataavailable = async function (event) {
+          let data = event.data;
+          chunks.push(data);
+          // if (keepAliveAsr.value) {
+          //   // console.log(await data.arrayBuffer());
+          //   const audioData = await data.arrayBuffer();
+          //   const int8Arr = new Int8Array(audioData);
+          //   // console.log(int8Arr.length, int8Arr.length - (int8Arr.length % 2));
+          //   const slicedInt8Arr = int8Arr.slice(
+          //     0,
+          //     int8Arr.length - (int8Arr.length % 2)
+          //   );
+          //   // console.log(audioData);
+          //   const frame = new Int16Array(slicedInt8Arr.buffer);
+          //   const res = vad.processBuffer(frame);
+          //   // console.log(res);
+
+          //   if (!trigger.value) {
+          //     ring_buffer.push({
+          //       frame: audioData,
+          //       is_speech: res,
+          //     });
+          //     let num_voiced = ring_buffer.deque.filter(
+          //       (item) => item.is_speech == 1
+          //     ).length;
+          //     if (num_voiced > 0.9 * dequeMaxLength) {
+          //       trigger.value = true;
+          //       ring_buffer.deque.forEach((e) => {
+          //         voiced_frames.push(e.frame);
+          //       });
+          //       console.log("Trigger On", voiced_frames.length);
+          //       ring_buffer.clear();
+          //     }
+          //   } else {
+          //     voiced_frames.push(audioData);
+          //     ring_buffer.push({
+          //       frame: audioData,
+          //       is_speech: res,
+          //     });
+          //     let num_unvoiced = ring_buffer.deque.filter(
+          //       (item) => item.is_speech == 0
+          //     ).length;
+          //     if (num_unvoiced > 0.9 * dequeMaxLength) {
+          //       trigger.value = false;
+          //       console.log("Trigger Off", voiced_frames.length);
+          //       console.log("send voice");
+          //       var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
+          //       // console.log(blob, len);
+          //       VAD_ASR(blob);
+          //       // var url = URL.createObjectURL(blob);
+          //       // seg.value.push({
+          //       //   length: len,
+          //       //   url: url,
+          //       // });
+          //       ring_buffer.clear();
+          //       voiced_frames = [];
+          //     }
+          //   }
+          //   if (voiced_frames.length > maxFrameLength) {
+          //     var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
+          //     VAD_ASR(blob);
+          //     voiced_frames = [];
+          //   }
+          // }
+        };
 
         mediaTimer = setInterval(function () {
           // get media amplitude
@@ -1503,12 +1589,21 @@ export default defineComponent({
         }
 
         recording.value = false;
-        await mediaRecorder.stopRecording();
-        let blob = await mediaRecorder.getBlob();
+        // await mediaRecorder.stopRecording();
+        // let blob = await mediaRecorder.getBlob();
+        mediaRecorder.stop();
+        console.log(mediaRecorder.state);
+        console.log("Recorder stopped.");
 
+        // audioBlob = blob;
+        // nativeUrl.value = URL.createObjectURL(blob);
+        // audioBlobName = "recording.wav";
+        // console.log(mediaRecorder.mimeType);
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+        chunks = [];
         audioBlob = blob;
         nativeUrl.value = URL.createObjectURL(blob);
-        audioBlobName = "recording.wav";
+        audioBlobName = "recording." + mime.extension(mediaRecorder.mimeType);
         recorded.value = true;
         audioVis.value = true;
         paused.value = false;
@@ -1528,14 +1623,16 @@ export default defineComponent({
       },
       async pauseRecord() {
         paused.value = true;
-        await mediaRecorder.pauseRecording();
+        // await mediaRecorder.pauseRecording();
+        mediaRecorder.pause();
         clearInterval(mediaTimer);
       },
       async resumeRecord() {
         paused.value = false;
         dateStarted = new Date().getTime();
         var initSeconds = recordDurationSeconds;
-        await mediaRecorder.resumeRecording();
+        // await mediaRecorder.resumeRecording();
+        mediaRecorder.resume();
         mediaTimer = setInterval(function () {
           // get media amplitude
           recordDurationSeconds =
