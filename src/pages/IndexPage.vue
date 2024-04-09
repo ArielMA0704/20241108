@@ -948,6 +948,44 @@ export default defineComponent({
       });
     }
 
+    let audioCtx;
+    let vadStatus = false;
+    function analysisAudio(stream) {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      const source = audioCtx.createMediaStreamSource(stream);
+
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      source.connect(analyser);
+
+      analysis();
+
+      function analysis() {
+        analyser.getByteFrequencyData(dataArray);
+        // 计算能量
+        let energy = dataArray.reduce((acc, val) => acc + val, 0);
+
+        // 设置能量阈值
+        let energyThreshold = 5000; // 示例阈值，根据您的实际数据进行调整
+
+        // 如果能量超过阈值，则认为存在人声
+        if (energy > energyThreshold) {
+          trigger.value = true;
+        } else {
+          trigger.value = false;
+          // console.log("未检测到人声");
+        }
+        if (audioCtx) {
+          requestAnimationFrame(analysis);
+        }
+      }
+    }
+
     async function llmInfenence() {
       try {
         $q.loading.show();
@@ -1482,6 +1520,9 @@ export default defineComponent({
           // mimeType: "audio/ogg",
           audioBitsPerSecond: 16000,
         });
+
+        analysisAudio(stream);
+
         recording.value = true;
         dateStarted = new Date().getTime();
         recordDuration.value = "00:00";
@@ -1498,67 +1539,6 @@ export default defineComponent({
         mediaRecorder.ondataavailable = async function (event) {
           let data = event.data;
           chunks.push(data);
-          // if (keepAliveAsr.value) {
-          //   // console.log(await data.arrayBuffer());
-          //   const audioData = await data.arrayBuffer();
-          //   const int8Arr = new Int8Array(audioData);
-          //   // console.log(int8Arr.length, int8Arr.length - (int8Arr.length % 2));
-          //   const slicedInt8Arr = int8Arr.slice(
-          //     0,
-          //     int8Arr.length - (int8Arr.length % 2)
-          //   );
-          //   // console.log(audioData);
-          //   const frame = new Int16Array(slicedInt8Arr.buffer);
-          //   const res = vad.processBuffer(frame);
-          //   // console.log(res);
-
-          //   if (!trigger.value) {
-          //     ring_buffer.push({
-          //       frame: audioData,
-          //       is_speech: res,
-          //     });
-          //     let num_voiced = ring_buffer.deque.filter(
-          //       (item) => item.is_speech == 1
-          //     ).length;
-          //     if (num_voiced > 0.9 * dequeMaxLength) {
-          //       trigger.value = true;
-          //       ring_buffer.deque.forEach((e) => {
-          //         voiced_frames.push(e.frame);
-          //       });
-          //       console.log("Trigger On", voiced_frames.length);
-          //       ring_buffer.clear();
-          //     }
-          //   } else {
-          //     voiced_frames.push(audioData);
-          //     ring_buffer.push({
-          //       frame: audioData,
-          //       is_speech: res,
-          //     });
-          //     let num_unvoiced = ring_buffer.deque.filter(
-          //       (item) => item.is_speech == 0
-          //     ).length;
-          //     if (num_unvoiced > 0.9 * dequeMaxLength) {
-          //       trigger.value = false;
-          //       console.log("Trigger Off", voiced_frames.length);
-          //       console.log("send voice");
-          //       var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-          //       // console.log(blob, len);
-          //       VAD_ASR(blob);
-          //       // var url = URL.createObjectURL(blob);
-          //       // seg.value.push({
-          //       //   length: len,
-          //       //   url: url,
-          //       // });
-          //       ring_buffer.clear();
-          //       voiced_frames = [];
-          //     }
-          //   }
-          //   if (voiced_frames.length > maxFrameLength) {
-          //     var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-          //     VAD_ASR(blob);
-          //     voiced_frames = [];
-          //   }
-          // }
         };
 
         mediaTimer = setInterval(function () {
@@ -1571,28 +1551,32 @@ export default defineComponent({
       async stopRecord() {
         $q.loading.show();
 
-        if (trigger.value) {
-          trigger.value = false;
-          if (voiced_frames.length > 0) {
-            console.log("send voice");
-            var [mergeblob, len] = createWavBlob(voiced_frames, 16000, 2);
-            // console.log(blob, len);
-            VAD_ASR(mergeblob);
-            // var url = URL.createObjectURL(mergeblob);
-            // seg.value.push({
-            //   length: len,
-            //   url: url,
-            // });
-            ring_buffer.clear();
-            voiced_frames = [];
-          }
-        }
+        // if (trigger.value) {
+        //   trigger.value = false;
+        //   if (voiced_frames.length > 0) {
+        //     console.log("send voice");
+        //     // var [mergeblob, len] = createWavBlob(voiced_frames, 16000, 2);
+        //     var mergeblob = new Blob(voiced_frames, {
+        //       type: mediaRecorder.mimeType,
+        //     });
+        //     // console.log(blob, len);
+        //     VAD_ASR(mergeblob);
+        //     // var url = URL.createObjectURL(mergeblob);
+        //     // seg.value.push({
+        //     //   length: len,
+        //     //   url: url,
+        //     // });
+        //     ring_buffer.clear();
+        //     voiced_frames = [];
+        //   }
+        // }
 
         recording.value = false;
         // await mediaRecorder.stopRecording();
         // let blob = await mediaRecorder.getBlob();
         mediaRecorder.stop();
         console.log(mediaRecorder.state);
+        audioCtx = null;
         console.log("Recorder stopped.");
 
         // audioBlob = blob;
