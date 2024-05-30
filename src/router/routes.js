@@ -29,6 +29,10 @@ const routes = [
         path: "promptManagement",
         component: () => import("pages/promptManagement.vue"),
       },
+      {
+        path: "ManagementSystem",
+        component: () => import("pages/ManagementSystem.vue"),
+      },
     ],
   },
 
