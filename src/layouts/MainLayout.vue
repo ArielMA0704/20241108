@@ -43,7 +43,16 @@
           <q-card-section>
             <div class="text-h6">User Setting</div>
             <div class="text-subtitle1">{{ username }}</div>
-            <q-btn label="管理 prompt 書籤" to="/promptManagement" />
+            <div class="flex column">
+              <q-btn label="管理 prompt 書籤" to="/promptManagement" />
+              <q-btn
+                label="管理後台"
+                to="/ManagementSystem"
+                v-if="userRole == 'ADMIN'"
+                class="q-mt-sm"
+              />
+            </div>
+
             <div class="flex q-mt-md">
               <div class="flex columns items-center">
                 <div class="text-subtitle1 text-weight-bold">
@@ -115,6 +124,7 @@ export default defineComponent({
     const $q = useQuasar();
     const route = useRoute();
     const username = computed(() => loginStore.user);
+    const userRole = ref(null);
     const userSetting = ref(false);
 
     const replyTokens = ref(1000);
@@ -168,6 +178,7 @@ export default defineComponent({
       },
       username,
       userSetting,
+      userRole,
       isPwd: ref(true),
       initUserSetting() {
         const token = getToken();
@@ -175,6 +186,8 @@ export default defineComponent({
           const userInfo = JSON.parse(atob(token.split(".")[1]));
           const sso = userInfo.sso;
           const permission = userInfo.permission;
+          console.log(userInfo);
+          userRole.value = userInfo.role;
           if (permission.reply_tokens) {
             replyTokens.value = permission.reply_tokens;
           }
