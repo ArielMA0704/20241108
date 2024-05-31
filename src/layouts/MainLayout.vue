@@ -20,11 +20,11 @@
           target="_blank"
           flat
         /> -->
+        <q-btn icon="home" to="/scene" flat v-if="loginStatus" />
         <q-btn
           icon="person"
           flat
           v-if="loginStatus"
-          no-caps
           @click="userSetting = true"
         >
           <!-- <q-menu>
