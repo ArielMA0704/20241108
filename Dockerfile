@@ -1,4 +1,4 @@
-FROM node:16.14.2
+FROM node:18.20.3
 # :16.6.2-alpine3.14
 WORKDIR /quasar
 COPY ./yarn.lock /quasar/yarn.lock
