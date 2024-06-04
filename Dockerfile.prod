@@ -1,6 +1,6 @@
 
 # build stage
-FROM node:16.14.2-slim as build-stage
+FROM node:18.20.3-slim as build-stage
 RUN yarn global add @quasar/cli
 WORKDIR /app
 COPY ./package.json .
