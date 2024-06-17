@@ -37,11 +37,11 @@ function getToken() {
   //     return null;
   //   }
   if (sttGetValue.value !== null) {
-    console.log('STT');
-    return sttGetValue.value
+    console.log("STT");
+    return sttGetValue.value;
   } else {
-    console.log('LTT');
-    return lttGetValue.value
+    console.log("LTT");
+    return lttGetValue.value;
   }
   // return sttGetValue.value !== null ? sttGetValue.value : lttGetValue.value;
 }
@@ -62,13 +62,17 @@ async function checkLogin(loginPage = false) {
       setToken(data.LTT, data.STT);
       return true;
     } catch (error) {
-      if (error.response.status == 401) {
-        if (!loginPage) {
-          logout();
+      if (error.response) {
+        if (error.response.status == 401) {
+          if (!loginPage) {
+            logout();
+          }
+        } else {
+          throw new Error(error);
+          // console.log(error);
         }
       } else {
-        // throw new Error(error);
-        console.log(error);
+        throw new Error(error);
       }
     }
   } else {
