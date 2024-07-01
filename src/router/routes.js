@@ -34,6 +34,10 @@ const routes = [
         component: () => import("pages/promptManagement.vue"),
       },
       {
+        path: "knowledgeManagement",
+        component: () => import("pages/KnowledgeManagement.vue"),
+      },
+      {
         path: "ManagementSystem",
         component: () => import("pages/ManagementSystem.vue"),
       },

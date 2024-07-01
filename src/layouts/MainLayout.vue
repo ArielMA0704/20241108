@@ -46,6 +46,11 @@
             <div class="flex column">
               <q-btn label="管理 prompt 書籤" to="/promptManagement" />
               <q-btn
+                label="管理知識庫"
+                to="/knowledgeManagement"
+                class="q-mt-sm"
+              />
+              <q-btn
                 label="管理後台"
                 to="/ManagementSystem"
                 v-if="userRole == 'ADMIN'"
