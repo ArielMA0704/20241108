@@ -171,6 +171,21 @@
               </q-item-section>
 
               <q-item-section>{{ item.name }}</q-item-section>
+              <q-item-section>
+                <div>
+                  <q-chip
+                    :color="
+                      item.status == 'FAIL'
+                        ? 'red'
+                        : item.status == 'CREATED'
+                        ? 'green'
+                        : 'orange'
+                    "
+                    text-color="white"
+                    :label="item.status"
+                  />
+                </div>
+              </q-item-section>
             </q-item>
           </q-list>
         </div>
@@ -468,6 +483,16 @@ export default defineComponent({
           },
         });
         const { data } = post;
+        if (data.fail_list) {
+          data.fail_list.forEach((e) => {
+            $q.notify({
+              message: e,
+              type: "negative",
+              position: "top",
+            });
+          });
+        }
+
         await getUserPermission();
         await getKBDlist(currentKB.value.id);
         await onRequest({
