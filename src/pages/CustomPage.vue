@@ -285,262 +285,58 @@
             <!-- <q-separator /> -->
           </div>
 
-          <div v-if="false">
-            <!-- 語音辨識結果 -->
-            <div class="flex">
-              <div class="q-pa-sm q-mt-md" style="border-radius: 10px">
-                <div class="flex items-center">
-                  <div class="text-h6 text-bold">語音辨識結果</div>
-                  <q-chip
-                    color="orange"
-                    icon="warning"
-                    text-color="white"
-                    v-if="unSave.asrResult"
-                  >
-                    未儲存
-                  </q-chip>
-                  <q-chip v-if="keepAliveInferencing">
-                    辨識中
-                    <q-spinner-dots class="q-ml-sm" />
-                  </q-chip>
-                  <q-icon
-                    class="q-ml-sm"
-                    name="record_voice_over"
-                    v-if="trigger"
-                  />
-                </div>
-                <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
-                  語音辨識結果會顯示在此，或者你也能把想提供給LLM的內容放在這，如檢驗檢查報告
-                </div>
-              </div>
-            </div>
-            <q-input
-              type="textarea"
-              v-model="sttResult"
-              filled
-              class="full-width q-mt-md"
-              autogrow
-              @update:model-value="unSave.asrResult = true"
-            >
-              <template v-slot:append>
-                <q-btn
-                  icon="save"
-                  flat
-                  class="q-ml-xs"
-                  padding="xs"
-                  unelevated
-                  @click="saveAsrResult"
-                />
-              </template>
-            </q-input>
-
-            <!-- 報告 -->
-            <div class="flex items-center q-mt-md">
-              <div
-                class="text-h6 text-bold q-pa-sm"
-                style="border-radius: 10px"
-              >
-                報告
-              </div>
-              <q-btn label="執行" @click="llmInfenence" class="q-ml-md" />
-              <q-btn
-                label="feedback"
-                class="q-ml-md"
-                @click="initFeedbackDialog"
-              />
-              <q-chip
-                color="orange"
-                icon="warning"
-                text-color="white"
-                v-if="unSave.llmResult"
-              >
-                未儲存
-              </q-chip>
-              <q-toggle
-                v-model="reportMD"
-                label="Markdown"
-                @update:model-value="setReportMode"
-              />
-            </div>
-            <q-dialog v-model="feedbackDialog">
-              <q-card style="width: 80vw">
-                <q-card-section>
-                  <div class="text-h6">Feedback</div>
-                </q-card-section>
-
-                <q-card-section class="q-pt-none">
-                  <div class="text-weight-bold">Department</div>
-                  <div class="flex items-center full-width justify-between">
-                    <q-select
-                      v-model="feedbackresult.department"
-                      :options="filterDepOptions"
-                      dense
-                      class="q-mb-md col-grow"
-                      use-input
-                      @filter="depFilterFn"
-                    >
-                      <template v-slot:no-option>
-                        <q-item>
-                          <q-item-section class="text-grey">
-                            No results
-                          </q-item-section>
-                        </q-item>
-                      </template>
-                    </q-select>
-                    <q-btn
-                      label="New Option"
-                      class="col-auto q-ml-md"
-                      @click="newOption"
-                    />
-                  </div>
-                  <div class="text-weight-bold">Factuality</div>
-                  <q-toggle
-                    label="LM (語言模型) 所生成的輸出與所提供的來源中相關事實的描述是否一致？(若否，可在reason中描述不一致的地方)"
-                    v-model="feedbackresult.qf1"
-                    checked-icon="check"
-                    unchecked-icon="clear"
-                  />
-                  <q-toggle
-                    label="LM (語言模型) 是否生成了一些來源資訊中不存在的內容？(若是，可在reason中列出幻覺的部份)"
-                    v-model="feedbackresult.qf2"
-                    checked-icon="check"
-                    unchecked-icon="clear"
-                  />
-
-                  <div class="text-weight-bold">Completeness</div>
-                  <q-toggle
-                    label="LM (語言模型) 生成的輸出是否有滿足提示(Prompt)中提到的要求？"
-                    v-model="feedbackresult.qc1"
-                    checked-icon="check"
-                    unchecked-icon="clear"
-                  />
-                  <q-toggle
-                    label="LM (語言模型) 生成的輸出是否有遺漏了來源中的重要內容？"
-                    v-model="feedbackresult.qc2"
-                    checked-icon="check"
-                    unchecked-icon="clear"
-                  />
-
-                  <div class="text-weight-bold">Safety</div>
-                  <q-toggle
-                    label="輸出是否包含任何可能導致不良患者結果的有意或無意的內容？(若是，請在reason中列出可能有害的內容)"
-                    v-model="feedbackresult.qs1"
-                    checked-icon="check"
-                    unchecked-icon="clear"
-                  />
-                  <div class="text-weight-bold">Reason</div>
-                  <q-input
-                    type="textarea"
-                    v-model="feedbackresult.other"
-                    autogrow
-                    filled
-                  />
-                </q-card-section>
-
-                <q-card-actions align="right">
-                  <q-btn
-                    flat
-                    label="Cancel"
-                    v-close-popup
-                    class="bg-red text-white"
-                  />
-                  <q-btn
-                    flat
-                    label="OK"
-                    v-close-popup
-                    @click="sendFeedback"
-                    class="bg-primary text-white"
-                  />
-                </q-card-actions>
-              </q-card>
-            </q-dialog>
-            <div v-if="reportMD" class="full-width q-mt-md outline q-pa-md">
-              <article v-html="llmResultMD" class="markdown-body"></article>
-            </div>
-            <q-input
-              filled
-              v-model="llmResult"
-              type="textarea"
-              autogrow
-              class="full-width q-mt-md"
-              @update:model-value="unSave.llmResult = true"
-              v-else
-            >
-              <template v-slot:append>
-                <q-btn
-                  icon="save"
-                  flat
-                  class="q-ml-xs"
-                  padding="xs"
-                  unelevated
-                  @click="saveLLMResult"
-                />
-                <q-btn
-                  icon="download"
-                  flat
-                  class="q-ml-xs"
-                  padding="xs"
-                  unelevated
-                  @click="downloadText('report.txt', llmResult)"
-                />
-              </template>
-            </q-input>
-          </div>
-
           <div class="fit q-mb-md">
-            <!-- q-pa-md  -->
-            <!-- <div class="text-h5">聊天紀錄</div> -->
             <q-scroll-area
               class="outline"
-              style="height: 70%; border-radius: 10px"
+              style="height: 80%; border-radius: 10px"
               ref="chatHistoryScroll"
             >
-              <!-- <div
+              <div
                 v-for="item in chatHistory"
                 :key="item.id"
                 class="flex column q-mb-md q-pa-sm"
                 :style="
-                  item.type == 'user' ? { backgroundColor: '#996a4e99' } : {}
+                  item.role == 'user' ? { backgroundColor: '#f4f4f4' } : {}
                 "
-              > -->
-              <!-- <div v-if="item.type == 'user'" class="flex items-center">
+              >
+                <div v-if="item.role == 'user'" class="flex items-center">
                   <q-avatar>
-                    <img src="astronaut.png" />
+                    <img src="USER.png" />
                   </q-avatar>
                   <div class="text-h6 q-ml-md">使用者</div>
                 </div>
                 <div v-else class="flex items-center">
                   <q-avatar>
-                    <img src="spaceAI.png" />
+                    <img src="AI.png" />
                   </q-avatar>
                   <div class="text-h6 q-ml-md">AI</div>
                 </div>
-                <q-img
+                <!-- <q-img
                   v-if="item.img"
                   :src="item.img"
                   style="max-height: 120px; max-width: 120px"
                   class="q-ma-sm"
                   fit="contain"
-                />
+                /> -->
                 <div
-                  v-html="item.text"
+                  v-html="item.content"
                   class="markdown-body q-pa-sm"
                   :style="{ backgroundColor: '#ffffff00' }"
-                ></div> -->
-              <!-- <q-separator
+                ></div>
+                <!-- <q-separator
                   v-if="chatHistory.indexOf(item) != chatHistory.length - 1"
                   color="starlux-light"
                   size="3px"
                   class="q-my-md"
                 /> -->
-              <!-- </div> -->
+              </div>
               <div class="q-pa-md" v-if="aiThinking">
                 <q-spinner-dots color="primary" size="2em" />
               </div>
             </q-scroll-area>
             <div
               class="q-mt-md outline"
-              style="height: 30%; border-radius: 10px"
+              style="height: 20%; border-radius: 10px"
             >
               <q-scroll-area
                 class="flex column no-warp"
@@ -644,11 +440,6 @@
                             style="height: 0px; width: 0px; visibility: hidden"
                             accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
                           />
-                          <!-- <q-toggle
-                    label="即時辨識"
-                    v-model="keepAliveAsr"
-                    :disable="keepAliveAsrDisabled"
-                  /> -->
                           <div v-if="recording" class="text-h6 q-ml-md">
                             {{ recordDuration }}
                           </div>
@@ -686,7 +477,6 @@
                         <div v-if="recorded">
                           <div class="flex row items-center q-mt-md">
                             <q-btn label="inference" @click="inference" />
-                            <!-- <q-checkbox label="自動產報告" v-model="AutoLLM" /> -->
                           </div>
                         </div>
                       </div>
@@ -848,6 +638,8 @@ export default defineComponent({
     md.use(emoji);
     md.use(markdownItMark);
 
+    const chatHistory = ref([]);
+    const chatHistoryScroll = ref(null);
     const aiThinking = ref(false);
     const userInput = ref(null);
 
@@ -2136,9 +1928,54 @@ export default defineComponent({
         defPrompt.value = val;
       },
       settingDialog: ref(false),
-      async sendChat() {},
+      async sendChat() {
+        chatHistory.value.push({
+          role: "user",
+          content: md.render(userInput.value),
+          // img: userInputImg.value,
+        });
+        setTimeout(() => {
+          chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
+        }, 500);
+
+        // const formdata = new FormData();
+        // formdata.append("userInput", userInput.value);
+        // formdata.append("sessionID", sessionID);
+        // if (imageInput.value) {
+        //   formdata.append("userInputImg", imageInput.value);
+        // }
+        // formdata.append("systemPrompt", systemPrompt.value);
+        // formdata.append("tempture", tempture.value);
+        // formdata.append("replyTokens", replyTokens.value);
+
+        userInput.value = "";
+        // userInputImg.value = null;
+        // imageInput.value = null;
+        // imageBtnDisable.value = false;
+        try {
+          aiThinking.value = true;
+          // const post = await api.post("/AI/chat", formdata);
+          // const { data } = post;
+          const data = "Currently no AI response!";
+          chatHistory.value.push({
+            role: "AI",
+            content: md.render(data),
+            img: null,
+          });
+          aiThinking.value = false;
+        } catch (error) {
+          chatHistory.value.push({
+            type: "system",
+            text: md.render("好像出錯了...\n我可能無法回答您"),
+            img: null,
+          });
+          aiThinking.value = false;
+        }
+      },
       aiThinking,
       userInput,
+      chatHistoryScroll,
+      chatHistory,
     };
   },
 });
