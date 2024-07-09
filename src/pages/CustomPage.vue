@@ -296,10 +296,10 @@
                 :key="item.id"
                 class="flex column q-mb-md q-pa-sm"
                 :style="
-                  item.role == 'user' ? { backgroundColor: '#f4f4f4' } : {}
+                  item.role == 'USER' ? { backgroundColor: '#f4f4f4' } : {}
                 "
               >
-                <div v-if="item.role == 'user'" class="flex items-center">
+                <div v-if="item.role == 'USER'" class="flex items-center">
                   <q-avatar>
                     <img src="USER.png" />
                   </q-avatar>
@@ -1930,7 +1930,7 @@ export default defineComponent({
       settingDialog: ref(false),
       async sendChat() {
         chatHistory.value.push({
-          role: "user",
+          role: "USER",
           content: md.render(userInput.value),
           // img: userInputImg.value,
         });
@@ -1938,15 +1938,14 @@ export default defineComponent({
           chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
         }, 500);
 
-        // const formdata = new FormData();
-        // formdata.append("userInput", userInput.value);
-        // formdata.append("sessionID", sessionID);
-        // if (imageInput.value) {
-        //   formdata.append("userInputImg", imageInput.value);
-        // }
-        // formdata.append("systemPrompt", systemPrompt.value);
-        // formdata.append("tempture", tempture.value);
-        // formdata.append("replyTokens", replyTokens.value);
+        const formdata = new FormData();
+        formdata.append("projectID", route.params.projectId);
+        formdata.append("text", userInput.value);
+        formdata.append("model", llmModel.value.value);
+        formdata.append("prompt", prompt.value);
+        formdata.append("replyTokens", replyTokens.value);
+        // formdata.append('chatHistory', true)
+        // formdata.append('referenceID', )
 
         userInput.value = "";
         // userInputImg.value = null;
@@ -1954,14 +1953,19 @@ export default defineComponent({
         // imageBtnDisable.value = false;
         try {
           aiThinking.value = true;
-          // const post = await api.post("/AI/chat", formdata);
-          // const { data } = post;
-          const data = "Currently no AI response!";
-          chatHistory.value.push({
-            role: "AI",
-            content: md.render(data),
-            img: null,
+          const post = await api.post("/AI/LLM", formdata, {
+            headers: {
+              Authorization: "Bearer " + getToken(),
+            },
           });
+          const { data } = post;
+          // const data = "Currently no AI response!";
+          // chatHistory.value.push({
+          //   role: "AI",
+          //   content: md.render(data),
+          //   img: null,
+          // });
+          chatHistory.value = data;
           aiThinking.value = false;
         } catch (error) {
           chatHistory.value.push({
