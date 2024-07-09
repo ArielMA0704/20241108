@@ -1122,6 +1122,28 @@ export default defineComponent({
       }
     }
 
+    async function getChatHistory(projectId) {
+      try {
+        const get = await api.get("/Project/ChatHistory", {
+          params: {
+            projectID: projectId,
+          },
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        });
+        const { data } = get;
+        chatHistory.value = data;
+        setTimeout(() => {
+          chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
+        }, 500);
+      } catch (error) {
+        throw new Error(error);
+
+        // throw new Error(error);
+      }
+    }
+
     async function getAudio(audio_path) {
       // const notif = $q.notify({
       //   group: false, // required to be updatable
@@ -1263,6 +1285,7 @@ export default defineComponent({
       if (await checkLogin()) {
         await getOptions("Custom"); // route.params.sceneType
         await getProjectData(route.params.projectId);
+        await getChatHistory(route.params.projectId);
         await getUserDefaultReplyTokens();
       }
     });
@@ -1944,7 +1967,7 @@ export default defineComponent({
         formdata.append("model", llmModel.value.value);
         formdata.append("prompt", prompt.value);
         formdata.append("replyTokens", replyTokens.value);
-        // formdata.append('chatHistory', true)
+        formdata.append("chatHistory", true);
         // formdata.append('referenceID', )
 
         userInput.value = "";
