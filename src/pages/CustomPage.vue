@@ -1,9 +1,12 @@
 <template>
   <q-page class="flex flex-start">
     <q-pull-to-refresh @refresh="refresh" class="full-width">
-      <div class="flex column full-width items-center justify-start">
+      <div
+        class="flex column full-width items-center justify-start"
+        style="height: calc(100vh - 50px)"
+      >
         <div
-          class="flex column justify-start items-start q-my-md"
+          class="flex column no-wrap full-height justify-start items-start q-my-md"
           style="width: 90%"
         >
           <div class="full-width">
@@ -50,552 +53,439 @@
                   "
                 />
               </div>
+              <q-btn icon="settings" flat round @click="settingDialog = true" />
+              <!-- class="q-my-md" -->
             </div>
-            <q-separator />
-          </div>
-          <q-btn
-            icon="settings"
-            class="q-mt-md"
-            flat
-            round
-            @click="settingDialog = true"
-          />
-          <q-dialog v-model="settingDialog" full-width>
-            <q-card style="width: 80vw">
-              <q-card-section>
-                <div class="text-h5">Setting</div>
-              </q-card-section>
 
-              <q-card-section class="q-pt-none">
-                <div class="text-h6">語音辨識</div>
-                <div class="flex column full-width outline q-pa-md">
-                  <q-select
-                    v-model="sttModel"
-                    :options="sttModelOption"
-                    label="語音辨識模型"
-                    @update:model-value="updSttModel"
-                  />
-                  <q-select
-                    v-model="sttLang"
-                    v-if="sttModel.supportLang"
-                    :options="sttModel.supportLang"
-                    label="語音辨識語言"
-                  />
-                </div>
-              </q-card-section>
-              <q-card-section>
-                <div class="text-h6">大型語言模型</div>
-                <div class="flex column full-width outline q-pa-md">
-                  <div v-if="sceneType != 'Custom' && sceneType != null">
-                    <q-chip color="orange" text-color="white" size="md">
-                      情境：{{ scene_label }}</q-chip
-                    >
-                  </div>
-                  <div
-                    class="flex items-center"
-                    v-if="sceneType != 'Custom' && sceneType != null"
-                  >
+            <q-dialog v-model="settingDialog" full-width>
+              <q-card style="width: 80vw">
+                <q-card-section>
+                  <div class="text-h5">Setting</div>
+                </q-card-section>
+
+                <q-card-section class="q-pt-none">
+                  <div class="text-h6">語音辨識</div>
+                  <div class="flex column full-width outline q-pa-md">
                     <q-select
-                      label="預設提示 (Prompt)"
-                      v-model="defPrompt"
-                      :options="filteredPromptOptions"
-                      style="min-width: 150px"
-                      @update:model-value="prompt = defPrompt.value"
-                      use-input
-                      hide-selected
-                      fill-input
-                      input-debounce="0"
-                      @filter="filterFn"
-                      @input-value="setModel"
-                    >
-                      <template v-slot:option="scope">
-                        <q-item v-bind="scope.itemProps">
-                          <q-item-section avatar>
-                            <q-icon name="public" v-if="scope.opt.public" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>{{ scope.opt.label }}</q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </template>
-                      <template v-slot:no-option>
-                        <q-item>
-                          <q-item-section class="text-italic text-grey">
-                            No options slot
-                          </q-item-section>
-                        </q-item>
-                      </template>
-                    </q-select>
-
-                    <q-checkbox
-                      label="顯示公開提示"
-                      v-model="publicPrompt"
-                      @update:model-value="refreshPromptOption"
+                      v-model="sttModel"
+                      :options="sttModelOption"
+                      label="語音辨識模型"
+                      @update:model-value="updSttModel"
                     />
-                  </div>
-                  <div class="flex items-center" v-else>
                     <q-select
-                      label="預設提示 (Prompt)"
-                      v-model="defPrompt"
-                      :options="filteredPromptOptions"
-                      style="min-width: 150px"
-                      use-input
-                      hide-selected
-                      fill-input
-                      input-debounce="0"
-                      @filter="filterFn"
-                      @input-value="setModel"
+                      v-model="sttLang"
+                      v-if="sttModel.supportLang"
+                      :options="sttModel.supportLang"
+                      label="語音辨識語言"
+                    />
+                  </div>
+                </q-card-section>
+                <q-card-section>
+                  <div class="text-h6">大型語言模型</div>
+                  <div class="flex column full-width outline q-pa-md">
+                    <div v-if="sceneType != 'Custom' && sceneType != null">
+                      <q-chip color="orange" text-color="white" size="md">
+                        情境：{{ scene_label }}</q-chip
+                      >
+                    </div>
+                    <div
+                      class="flex items-center"
+                      v-if="sceneType != 'Custom' && sceneType != null"
                     >
-                      <template v-slot:option="scope">
-                        <q-item v-bind="scope.itemProps">
-                          <q-item-section avatar>
-                            <q-icon name="public" v-if="scope.opt.public" />
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>{{ scope.opt.label }}</q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </template>
-                      <template v-slot:no-option>
-                        <q-item>
-                          <q-item-section class="text-italic text-grey">
-                            No options slot
-                          </q-item-section>
-                        </q-item>
-                      </template>
-                    </q-select>
-                    <q-btn
-                      label="帶入提示 (Prompt)"
-                      @click="prompt = defPrompt.value"
-                      class="q-ml-md"
-                      no-caps
-                    />
-                    <q-checkbox
-                      label="顯示公開提示"
-                      v-model="publicPrompt"
-                      @update:model-value="refreshPromptOption"
-                    />
-                  </div>
-                  <div
-                    class="q-mt-md flex row items-center justify-between"
-                    v-if="!(sceneType != 'Custom' && sceneType != null)"
-                  >
-                    <div class="hrDiv"><hr /></div>
-                    <div>OR</div>
-                    <div class="hrDiv"><hr /></div>
-                  </div>
-                  <q-input
-                    type="textarea"
-                    label="輸入提示 (Prompt)"
-                    autogrow
-                    v-model="prompt"
-                    filled
-                    class="full-width q-mt-md"
-                    v-if="!(sceneType != 'Custom' && sceneType != null)"
-                  >
-                    <template v-slot:append>
-                      <q-btn
-                        icon="bookmark_add"
-                        flat
-                        @click="promptSaveDialog = true"
-                      />
-                    </template>
-                  </q-input>
+                      <q-select
+                        label="預設提示 (Prompt)"
+                        v-model="defPrompt"
+                        :options="filteredPromptOptions"
+                        style="min-width: 150px"
+                        @update:model-value="prompt = defPrompt.value"
+                        use-input
+                        hide-selected
+                        fill-input
+                        input-debounce="0"
+                        @filter="filterFn"
+                        @input-value="setModel"
+                      >
+                        <template v-slot:option="scope">
+                          <q-item v-bind="scope.itemProps">
+                            <q-item-section avatar>
+                              <q-icon name="public" v-if="scope.opt.public" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>{{ scope.opt.label }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                        <template v-slot:no-option>
+                          <q-item>
+                            <q-item-section class="text-italic text-grey">
+                              No options slot
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                      </q-select>
 
-                  <!-- prompt 儲存 dialog -->
-                  <q-dialog v-model="promptSaveDialog">
-                    <q-card>
-                      <q-card-section>
-                        <div class="text-h6">設為預設Prompt</div>
-                        <q-input
-                          label="標題"
-                          v-model="newPrompt.label"
-                          filled
-                          autogrow
-                          :rules="[(val) => !!val || '請輸入標題']"
-                        >
-                          <template v-slot:append>
-                            <q-btn
-                              icon="casino"
-                              @click="recommendTitle"
-                              round
-                              flat
-                            />
-                          </template>
-                        </q-input>
-                        <q-checkbox
-                          label="設為公開"
-                          v-model="newPrompt.public"
-                        />
-                      </q-card-section>
-                      <q-card-actions align="right">
-                        <q-btn
-                          label="取消"
-                          v-close-popup
-                          class="bg-red text-white"
-                        />
-                        <q-btn
-                          label="確定"
-                          v-close-popup
-                          @click="promptSave"
-                          :disable="!newPrompt.label"
-                        />
-                      </q-card-actions>
-                    </q-card>
-                  </q-dialog>
-
-                  <div class="flex column q-mt-md">
-                    <div>
-                      <q-chip square color="primary" text-color="white">
-                        回覆長度 (Tokens)：
-                      </q-chip>
-                      <q-btn
-                        icon="sym_r_info"
-                        flat
-                        round
-                        padding="xs"
-                        @click="
-                          $q.dialog({
-                            title: 'Tokens',
-                            message:
-                              '一個英文詞可能為 2 至 4 個 token，一個中文字可能為 1 至 3 個 token',
-                            ok: false,
-                          })
-                        "
+                      <q-checkbox
+                        label="顯示公開提示"
+                        v-model="publicPrompt"
+                        @update:model-value="refreshPromptOption"
                       />
                     </div>
-                    <div class="flex full-width justify-center">
-                      <q-slider
-                        v-model="replyTokens"
-                        :min="20"
-                        :max="replyTokens_maxTokens"
-                        label
-                        :marker-labels="replyTokens_mark_labels"
-                        style="width: 99%"
+                    <div class="flex items-center" v-else>
+                      <q-select
+                        label="預設提示 (Prompt)"
+                        v-model="defPrompt"
+                        :options="filteredPromptOptions"
+                        style="min-width: 150px"
+                        use-input
+                        hide-selected
+                        fill-input
+                        input-debounce="0"
+                        @filter="filterFn"
+                        @input-value="setModel"
+                      >
+                        <template v-slot:option="scope">
+                          <q-item v-bind="scope.itemProps">
+                            <q-item-section avatar>
+                              <q-icon name="public" v-if="scope.opt.public" />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>{{ scope.opt.label }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                        <template v-slot:no-option>
+                          <q-item>
+                            <q-item-section class="text-italic text-grey">
+                              No options slot
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                      </q-select>
+                      <q-btn
+                        label="帶入提示 (Prompt)"
+                        @click="prompt = defPrompt.value"
+                        class="q-ml-md"
+                        no-caps
+                      />
+                      <q-checkbox
+                        label="顯示公開提示"
+                        v-model="publicPrompt"
+                        @update:model-value="refreshPromptOption"
                       />
                     </div>
-                  </div>
-                  <q-select
-                    v-model="llmModel"
-                    :options="llmOptions"
-                    @update:model-value="initLMsettings"
-                    label="LLM"
-                  />
-                </div>
-              </q-card-section>
-            </q-card>
-          </q-dialog>
-          <!-- 語音輸入 -->
-          <div class="flex">
-            <div class="q-pa-sm" style="border-radius: 10px">
-              <div class="flex items-center">
-                <div class="text-h6 text-bold">語音輸入</div>
-                <q-chip
-                  color="orange"
-                  icon="warning"
-                  text-color="white"
-                  v-if="unSave.audio"
-                >
-                  未上傳
-                </q-chip>
-              </div>
-              <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
-                啟動即時辨識，將於錄音開始時，預先清除語音辨識結果
-              </div>
-            </div>
-          </div>
-          <div class="flex column full-width outline q-pa-md">
-            <!-- input -->
-            <div class="flex row justify-start items-center" v-if="!recorded">
-              <q-btn @click="startRecord" v-if="!recording">
-                <q-icon name="radio_button_checked" color="red" />
-                <div class="q-ml-xs">Rec</div>
-              </q-btn>
-              <div v-else>
-                <q-btn @click="stopRecord" icon="stop" label="Stop" />
-                <q-btn
-                  @click="pauseRecord"
-                  icon="sym_r_pause"
-                  label="Pause"
-                  v-if="!paused"
-                  class="q-ml-md"
-                />
-                <q-btn
-                  @click="resumeRecord"
-                  icon="sym_r_resume"
-                  label="Resume"
-                  v-else
-                  class="q-ml-md"
-                />
-              </div>
-              <q-btn
-                @click="audioFileInput.pickFiles()"
-                icon="upload"
-                v-if="!recording"
-                class="q-ml-md"
-                label="upload"
-              />
-              <q-file
-                ref="audioFileInput"
-                v-model="audiofile"
-                filled
-                @update:model-value="userUploadFile"
-                v-if="!recording"
-                style="height: 0px; width: 0px; visibility: hidden"
-                accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
-              />
-              <!-- <q-toggle
-                label="即時辨識"
-                v-model="keepAliveAsr"
-                :disable="keepAliveAsrDisabled"
-              /> -->
-              <div v-if="recording" class="text-h6 q-ml-md">
-                {{ recordDuration }}
-              </div>
-            </div>
+                    <div
+                      class="q-mt-md flex row items-center justify-between"
+                      v-if="!(sceneType != 'Custom' && sceneType != null)"
+                    >
+                      <div class="hrDiv"><hr /></div>
+                      <div>OR</div>
+                      <div class="hrDiv"><hr /></div>
+                    </div>
+                    <q-input
+                      type="textarea"
+                      label="輸入提示 (Prompt)"
+                      autogrow
+                      v-model="prompt"
+                      filled
+                      class="full-width q-mt-md"
+                      v-if="!(sceneType != 'Custom' && sceneType != null)"
+                    >
+                      <template v-slot:append>
+                        <q-btn
+                          icon="bookmark_add"
+                          flat
+                          @click="promptSaveDialog = true"
+                        />
+                      </template>
+                    </q-input>
 
-            <!-- audio -->
+                    <!-- prompt 儲存 dialog -->
+                    <q-dialog v-model="promptSaveDialog">
+                      <q-card>
+                        <q-card-section>
+                          <div class="text-h6">設為預設Prompt</div>
+                          <q-input
+                            label="標題"
+                            v-model="newPrompt.label"
+                            filled
+                            autogrow
+                            :rules="[(val) => !!val || '請輸入標題']"
+                          >
+                            <template v-slot:append>
+                              <q-btn
+                                icon="casino"
+                                @click="recommendTitle"
+                                round
+                                flat
+                              />
+                            </template>
+                          </q-input>
+                          <q-checkbox
+                            label="設為公開"
+                            v-model="newPrompt.public"
+                          />
+                        </q-card-section>
+                        <q-card-actions align="right">
+                          <q-btn
+                            label="取消"
+                            v-close-popup
+                            class="bg-red text-white"
+                          />
+                          <q-btn
+                            label="確定"
+                            v-close-popup
+                            @click="promptSave"
+                            :disable="!newPrompt.label"
+                          />
+                        </q-card-actions>
+                      </q-card>
+                    </q-dialog>
+
+                    <div class="flex column q-mt-md">
+                      <div>
+                        <q-chip square color="primary" text-color="white">
+                          回覆長度 (Tokens)：
+                        </q-chip>
+                        <q-btn
+                          icon="sym_r_info"
+                          flat
+                          round
+                          padding="xs"
+                          @click="
+                            $q.dialog({
+                              title: 'Tokens',
+                              message:
+                                '一個英文詞可能為 2 至 4 個 token，一個中文字可能為 1 至 3 個 token',
+                              ok: false,
+                            })
+                          "
+                        />
+                      </div>
+                      <div class="flex full-width justify-center">
+                        <q-slider
+                          v-model="replyTokens"
+                          :min="20"
+                          :max="replyTokens_maxTokens"
+                          label
+                          :marker-labels="replyTokens_mark_labels"
+                          style="width: 99%"
+                        />
+                      </div>
+                    </div>
+                    <q-select
+                      v-model="llmModel"
+                      :options="llmOptions"
+                      @update:model-value="initLMsettings"
+                      label="LLM"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+            </q-dialog>
+            <!-- <q-separator /> -->
+          </div>
+
+          <div class="fit q-mb-md">
+            <q-scroll-area
+              class="outline"
+              style="height: 80%; border-radius: 10px"
+              ref="chatHistoryScroll"
+            >
+              <div
+                v-for="item in chatHistory"
+                :key="item.id"
+                class="flex column q-mb-md q-pa-sm"
+                :style="
+                  item.role == 'USER' ? { backgroundColor: '#f4f4f4' } : {}
+                "
+              >
+                <div v-if="item.role == 'USER'" class="flex items-center">
+                  <q-avatar>
+                    <img src="USER.png" />
+                  </q-avatar>
+                  <div class="text-h6 q-ml-md">使用者</div>
+                </div>
+                <div v-else class="flex items-center">
+                  <q-avatar>
+                    <img src="AI.png" />
+                  </q-avatar>
+                  <div class="text-h6 q-ml-md">AI</div>
+                </div>
+                <!-- <q-img
+                  v-if="item.img"
+                  :src="item.img"
+                  style="max-height: 120px; max-width: 120px"
+                  class="q-ma-sm"
+                  fit="contain"
+                /> -->
+                <div
+                  v-html="item.content"
+                  class="markdown-body q-pa-sm"
+                  :style="{ backgroundColor: '#ffffff00' }"
+                ></div>
+                <!-- <q-separator
+                  v-if="chatHistory.indexOf(item) != chatHistory.length - 1"
+                  color="starlux-light"
+                  size="3px"
+                  class="q-my-md"
+                /> -->
+              </div>
+              <div class="q-pa-md" v-if="aiThinking">
+                <q-spinner-dots color="primary" size="2em" />
+              </div>
+            </q-scroll-area>
             <div
-              class="flex row items-center full-width"
-              v-if="audioVis && recorded"
+              class="q-mt-md outline"
+              style="height: 20%; border-radius: 10px"
             >
-              <audio
-                :src="nativeUrl"
-                controls
-                id="audioComp"
-                v-if="audioVis"
-                class="audioStyle"
-              ></audio>
-              <q-btn
-                @click="recorded = false"
-                icon="close"
-                flat
-                class="bg-red text-white q-ml-md"
-                padding="xs"
-              />
-              <q-btn
-                icon="download"
-                flat
-                class="q-ml-xs"
-                padding="xs"
-                unelevated
-                @click="downloadAudio"
-              />
-            </div>
-
-            <div v-if="recorded">
-              <div class="flex row items-center q-mt-md">
-                <q-btn label="inference" @click="inference" />
-                <q-checkbox label="自動產報告" v-model="AutoLLM" />
+              <q-scroll-area
+                class="flex column no-warp"
+                style="height: calc(100% - 36px)"
+              >
+                <q-input autogrow v-model="userInput" class="q-pa-sm" />
+                <!-- <q-img
+                  v-if="userInputImg"
+                  :src="userInputImg"
+                  style="max-height: 120px; max-width: 120px"
+                  class="q-ma-sm"
+                  fit="contain"
+                /> -->
+              </q-scroll-area>
+              <div class="flex justify-end">
+                <!-- <q-file
+                  v-model:model-value="imageInput"
+                  style="width: 0px; height: 0px"
+                  ref="imageUpload"
+                  @update:model-value="insertImage"
+                  accept="image/*"
+                /> -->
+                <!-- <q-btn
+                  icon="image"
+                  @click="imageUpload.pickFiles()"
+                  :disable="imageBtnDisable"
+                /> -->
+                <q-btn icon="mic" flat @click="recordingDiag = true" />
+                <q-btn icon="send" @click="sendChat" flat />
               </div>
+              <q-dialog v-model="recordingDiag" class="full-width">
+                <q-card style="width: 80vw">
+                  <q-card-section>
+                    <!-- 語音輸入 -->
+                    <div class="flex q-ma-sm">
+                      <div class="flex">
+                        <div class="q-pa-sm" style="border-radius: 10px">
+                          <div class="flex items-center">
+                            <div class="text-h6 text-bold">語音輸入</div>
+                            <q-chip
+                              color="orange"
+                              icon="warning"
+                              text-color="white"
+                              v-if="unSave.audio"
+                            >
+                              未上傳
+                            </q-chip>
+                          </div>
+                          <div
+                            class="text-subtitle2"
+                            style="color: rgba(0, 0, 0, 0.6)"
+                          >
+                            啟動即時辨識，將於錄音開始時，預先清除語音辨識結果
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex column full-width outline q-pa-md">
+                        <!-- input -->
+                        <div
+                          class="flex row justify-start items-center"
+                          v-if="!recorded"
+                        >
+                          <q-btn @click="startRecord" v-if="!recording">
+                            <q-icon name="radio_button_checked" color="red" />
+                            <div class="q-ml-xs">Rec</div>
+                          </q-btn>
+                          <div v-else>
+                            <q-btn
+                              @click="stopRecord"
+                              icon="stop"
+                              label="Stop"
+                            />
+                            <q-btn
+                              @click="pauseRecord"
+                              icon="sym_r_pause"
+                              label="Pause"
+                              v-if="!paused"
+                              class="q-ml-md"
+                            />
+                            <q-btn
+                              @click="resumeRecord"
+                              icon="sym_r_resume"
+                              label="Resume"
+                              v-else
+                              class="q-ml-md"
+                            />
+                          </div>
+                          <q-btn
+                            @click="audioFileInput.pickFiles()"
+                            icon="upload"
+                            v-if="!recording"
+                            class="q-ml-md"
+                            label="upload"
+                          />
+                          <q-file
+                            ref="audioFileInput"
+                            v-model="audiofile"
+                            filled
+                            @update:model-value="userUploadFile"
+                            v-if="!recording"
+                            style="height: 0px; width: 0px; visibility: hidden"
+                            accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
+                          />
+                          <div v-if="recording" class="text-h6 q-ml-md">
+                            {{ recordDuration }}
+                          </div>
+                        </div>
+
+                        <!-- audio -->
+                        <div
+                          class="flex row items-center full-width"
+                          v-if="audioVis && recorded"
+                        >
+                          <audio
+                            :src="nativeUrl"
+                            controls
+                            id="audioComp"
+                            v-if="audioVis"
+                            class="audioStyle"
+                          ></audio>
+                          <q-btn
+                            @click="recorded = false"
+                            icon="close"
+                            flat
+                            class="bg-red text-white q-ml-md"
+                            padding="xs"
+                          />
+                          <q-btn
+                            icon="download"
+                            flat
+                            class="q-ml-xs"
+                            padding="xs"
+                            unelevated
+                            @click="downloadAudio"
+                          />
+                        </div>
+
+                        <div v-if="recorded">
+                          <div class="flex row items-center q-mt-md">
+                            <q-btn label="inference" @click="inference" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </q-dialog>
             </div>
           </div>
-          <div class="flex column">
-            <a
-              v-for="item in seg"
-              :key="item.length"
-              :href="item.url"
-              target="_blank"
-              >test {{ item.length }}</a
-            >
-          </div>
-
-          <!-- 語音辨識結果 -->
-          <div class="flex">
-            <div class="q-pa-sm q-mt-md" style="border-radius: 10px">
-              <div class="flex items-center">
-                <div class="text-h6 text-bold">語音辨識結果</div>
-                <q-chip
-                  color="orange"
-                  icon="warning"
-                  text-color="white"
-                  v-if="unSave.asrResult"
-                >
-                  未儲存
-                </q-chip>
-                <q-chip v-if="keepAliveInferencing">
-                  辨識中
-                  <q-spinner-dots class="q-ml-sm" />
-                </q-chip>
-                <q-icon
-                  class="q-ml-sm"
-                  name="record_voice_over"
-                  v-if="trigger"
-                />
-              </div>
-              <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
-                語音辨識結果會顯示在此，或者你也能把想提供給LLM的內容放在這，如檢驗檢查報告
-              </div>
-            </div>
-          </div>
-          <q-input
-            type="textarea"
-            v-model="sttResult"
-            filled
-            class="full-width q-mt-md"
-            autogrow
-            @update:model-value="unSave.asrResult = true"
-          >
-            <template v-slot:append>
-              <q-btn
-                icon="save"
-                flat
-                class="q-ml-xs"
-                padding="xs"
-                unelevated
-                @click="saveAsrResult"
-              />
-            </template>
-          </q-input>
-
-          <!-- 報告 -->
-          <div class="flex items-center q-mt-md">
-            <div class="text-h6 text-bold q-pa-sm" style="border-radius: 10px">
-              報告
-            </div>
-            <q-btn label="執行" @click="llmInfenence" class="q-ml-md" />
-            <q-btn
-              label="feedback"
-              class="q-ml-md"
-              @click="initFeedbackDialog"
-            />
-            <q-chip
-              color="orange"
-              icon="warning"
-              text-color="white"
-              v-if="unSave.llmResult"
-            >
-              未儲存
-            </q-chip>
-            <q-toggle
-              v-model="reportMD"
-              label="Markdown"
-              @update:model-value="setReportMode"
-            />
-          </div>
-          <q-dialog v-model="feedbackDialog">
-            <q-card style="width: 80vw">
-              <q-card-section>
-                <div class="text-h6">Feedback</div>
-              </q-card-section>
-
-              <q-card-section class="q-pt-none">
-                <div class="text-weight-bold">Department</div>
-                <div class="flex items-center full-width justify-between">
-                  <q-select
-                    v-model="feedbackresult.department"
-                    :options="filterDepOptions"
-                    dense
-                    class="q-mb-md col-grow"
-                    use-input
-                    @filter="depFilterFn"
-                  >
-                    <template v-slot:no-option>
-                      <q-item>
-                        <q-item-section class="text-grey">
-                          No results
-                        </q-item-section>
-                      </q-item>
-                    </template>
-                  </q-select>
-                  <q-btn
-                    label="New Option"
-                    class="col-auto q-ml-md"
-                    @click="newOption"
-                  />
-                </div>
-                <div class="text-weight-bold">Factuality</div>
-                <q-toggle
-                  label="LM (語言模型) 所生成的輸出與所提供的來源中相關事實的描述是否一致？(若否，可在reason中描述不一致的地方)"
-                  v-model="feedbackresult.qf1"
-                  checked-icon="check"
-                  unchecked-icon="clear"
-                />
-                <q-toggle
-                  label="LM (語言模型) 是否生成了一些來源資訊中不存在的內容？(若是，可在reason中列出幻覺的部份)"
-                  v-model="feedbackresult.qf2"
-                  checked-icon="check"
-                  unchecked-icon="clear"
-                />
-
-                <div class="text-weight-bold">Completeness</div>
-                <q-toggle
-                  label="LM (語言模型) 生成的輸出是否有滿足提示(Prompt)中提到的要求？"
-                  v-model="feedbackresult.qc1"
-                  checked-icon="check"
-                  unchecked-icon="clear"
-                />
-                <q-toggle
-                  label="LM (語言模型) 生成的輸出是否有遺漏了來源中的重要內容？"
-                  v-model="feedbackresult.qc2"
-                  checked-icon="check"
-                  unchecked-icon="clear"
-                />
-
-                <div class="text-weight-bold">Safety</div>
-                <q-toggle
-                  label="輸出是否包含任何可能導致不良患者結果的有意或無意的內容？(若是，請在reason中列出可能有害的內容)"
-                  v-model="feedbackresult.qs1"
-                  checked-icon="check"
-                  unchecked-icon="clear"
-                />
-                <div class="text-weight-bold">Reason</div>
-                <q-input
-                  type="textarea"
-                  v-model="feedbackresult.other"
-                  autogrow
-                  filled
-                />
-              </q-card-section>
-
-              <q-card-actions align="right">
-                <q-btn
-                  flat
-                  label="Cancel"
-                  v-close-popup
-                  class="bg-red text-white"
-                />
-                <q-btn
-                  flat
-                  label="OK"
-                  v-close-popup
-                  @click="sendFeedback"
-                  class="bg-primary text-white"
-                />
-              </q-card-actions>
-            </q-card>
-          </q-dialog>
-          <div v-if="reportMD" class="full-width q-mt-md outline q-pa-md">
-            <article v-html="llmResultMD" class="markdown-body"></article>
-          </div>
-          <q-input
-            filled
-            v-model="llmResult"
-            type="textarea"
-            autogrow
-            class="full-width q-mt-md"
-            @update:model-value="unSave.llmResult = true"
-            v-else
-          >
-            <template v-slot:append>
-              <q-btn
-                icon="save"
-                flat
-                class="q-ml-xs"
-                padding="xs"
-                unelevated
-                @click="saveLLMResult"
-              />
-              <q-btn
-                icon="download"
-                flat
-                class="q-ml-xs"
-                padding="xs"
-                unelevated
-                @click="downloadText('report.txt', llmResult)"
-              />
-            </template>
-          </q-input>
         </div>
       </div>
     </q-pull-to-refresh>
@@ -675,6 +565,7 @@ export default defineComponent({
     var recordDurationSeconds = 0;
     const projectNameEditing = ref(false);
 
+    const recordingDiag = ref(false);
     const nativeUrl = ref("");
     const recording = ref(false);
     const recorded = ref(false);
@@ -697,7 +588,7 @@ export default defineComponent({
       value: "AOAI-whisper",
     });
     const sttLang = ref(null);
-    const AutoLLM = ref(true);
+    const AutoLLM = ref(false);
     const sttResult = ref("");
 
     const prompt = ref("");
@@ -746,6 +637,11 @@ export default defineComponent({
     });
     md.use(emoji);
     md.use(markdownItMark);
+
+    const chatHistory = ref([]);
+    const chatHistoryScroll = ref(null);
+    const aiThinking = ref(false);
+    const userInput = ref(null);
 
     let checkASR = false;
     let checkLLM = false;
@@ -1053,6 +949,7 @@ export default defineComponent({
           if (checkASR) {
             if (data.stt_status == "FINISHED") {
               sttResult.value = data.stt_result;
+              userInput.value = data.stt_result;
               $q.notify({
                 position: "top",
                 type: "positive",
@@ -1156,6 +1053,7 @@ export default defineComponent({
           }
           if (data.stt_result) {
             sttResult.value = data.stt_result;
+            userInput.value = data.stt_result;
           }
           if (data.prompt) {
             prompt.value = data.prompt;
@@ -1220,6 +1118,28 @@ export default defineComponent({
         } else {
           throw new Error(error);
         }
+        // throw new Error(error);
+      }
+    }
+
+    async function getChatHistory(projectId) {
+      try {
+        const get = await api.get("/Project/ChatHistory", {
+          params: {
+            projectID: projectId,
+          },
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        });
+        const { data } = get;
+        chatHistory.value = data;
+        setTimeout(() => {
+          chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
+        }, 500);
+      } catch (error) {
+        throw new Error(error);
+
         // throw new Error(error);
       }
     }
@@ -1365,6 +1285,7 @@ export default defineComponent({
       if (await checkLogin()) {
         await getOptions("Custom"); // route.params.sceneType
         await getProjectData(route.params.projectId);
+        await getChatHistory(route.params.projectId);
         await getUserDefaultReplyTokens();
       }
     });
@@ -1395,6 +1316,7 @@ export default defineComponent({
       router,
       sceneType,
       scene_label,
+      recordingDiag,
       async startRecord() {
         unSave.value.audio = true;
         if ("wakeLock" in navigator) {
@@ -1788,6 +1710,7 @@ export default defineComponent({
           // const post = await api.get("apitest");
           const { data } = post;
           sttResult.value = data.text;
+          userInput.value = data.text;
           unSave.value.audio = false;
           unSave.value.asrResult = false;
           if (data.cancelAutoLLM) {
@@ -1803,6 +1726,7 @@ export default defineComponent({
           console.log("err" + error);
           $q.loading.hide();
           sttResult.value = "語音辨識失敗！！！ \n" + error.toString();
+          userInput.value = "語音辨識失敗！！！ \n" + error.toString();
         }
       },
       updSttModel(value) {
@@ -2027,6 +1951,58 @@ export default defineComponent({
         defPrompt.value = val;
       },
       settingDialog: ref(false),
+      async sendChat() {
+        chatHistory.value.push({
+          role: "USER",
+          content: md.render(userInput.value),
+          // img: userInputImg.value,
+        });
+        setTimeout(() => {
+          chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
+        }, 500);
+
+        const formdata = new FormData();
+        formdata.append("projectID", route.params.projectId);
+        formdata.append("text", userInput.value);
+        formdata.append("model", llmModel.value.value);
+        formdata.append("prompt", prompt.value);
+        formdata.append("replyTokens", replyTokens.value);
+        formdata.append("chatHistory", true);
+        // formdata.append('referenceID', )
+
+        userInput.value = "";
+        // userInputImg.value = null;
+        // imageInput.value = null;
+        // imageBtnDisable.value = false;
+        try {
+          aiThinking.value = true;
+          const post = await api.post("/AI/LLM", formdata, {
+            headers: {
+              Authorization: "Bearer " + getToken(),
+            },
+          });
+          const { data } = post;
+          // const data = "Currently no AI response!";
+          // chatHistory.value.push({
+          //   role: "AI",
+          //   content: md.render(data),
+          //   img: null,
+          // });
+          chatHistory.value = data;
+          aiThinking.value = false;
+        } catch (error) {
+          chatHistory.value.push({
+            type: "system",
+            text: md.render("好像出錯了...\n我可能無法回答您"),
+            img: null,
+          });
+          aiThinking.value = false;
+        }
+      },
+      aiThinking,
+      userInput,
+      chatHistoryScroll,
+      chatHistory,
     };
   },
 });
