@@ -280,6 +280,18 @@
                     />
                   </div>
                 </q-card-section>
+                <q-card-section>
+                  <div class="text-h6">知識庫</div>
+                  <div class="flex column full-width outline q-pa-md">
+                    <q-select
+                      clearable
+                      filled
+                      v-model="selectedKB"
+                      :options="KBOptions"
+                      label="選擇知識庫"
+                    />
+                  </div>
+                </q-card-section>
               </q-card>
             </q-dialog>
             <!-- <q-separator /> -->
@@ -651,6 +663,9 @@ export default defineComponent({
       llmResult: false,
     });
 
+    const selectedKB = ref(null);
+    const KBOptions = ref([]);
+
     function calculateTimeDuration(secs) {
       var hr = Math.floor(secs / 3600);
       var min = Math.floor((secs - hr * 3600) / 60);
@@ -1009,6 +1024,13 @@ export default defineComponent({
       }
     }
 
+    function convertChatHistory(ChatHistoryOrg) {
+      for (var i = 0; i < ChatHistoryOrg.length; i++) {
+        ChatHistoryOrg[i].content = md.render(ChatHistoryOrg[i].content);
+      }
+      return ChatHistoryOrg;
+    }
+
     async function getProjectData(projectId) {
       try {
         const get = await api.get("/projectData", {
@@ -1133,7 +1155,7 @@ export default defineComponent({
           },
         });
         const { data } = get;
-        chatHistory.value = data;
+        chatHistory.value = convertChatHistory(data);
         setTimeout(() => {
           chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
         }, 500);
@@ -1246,6 +1268,20 @@ export default defineComponent({
       }
     }
 
+    async function getKBOptions() {
+      try {
+        const get = await api.get("/KnowledgeBase/retrivableKB", {
+          headers: {
+            Authorization: "Bearer " + getToken(),
+          },
+        });
+        const { data } = get;
+        KBOptions.value = data;
+      } catch (error) {
+        throw new Error(error);
+      }
+    }
+
     async function getUserDefaultReplyTokens() {
       try {
         const get = await api.get("/Account/replyTokens", {
@@ -1284,6 +1320,7 @@ export default defineComponent({
     onMounted(async () => {
       if (await checkLogin()) {
         await getOptions("Custom"); // route.params.sceneType
+        await getKBOptions();
         await getProjectData(route.params.projectId);
         await getChatHistory(route.params.projectId);
         await getUserDefaultReplyTokens();
@@ -1968,7 +2005,9 @@ export default defineComponent({
         formdata.append("prompt", prompt.value);
         formdata.append("replyTokens", replyTokens.value);
         formdata.append("chatHistory", true);
-        // formdata.append('referenceID', )
+        if (selectedKB.value) {
+          formdata.append("referenceID", selectedKB.value.value);
+        }
 
         userInput.value = "";
         // userInputImg.value = null;
@@ -1985,10 +2024,10 @@ export default defineComponent({
           // const data = "Currently no AI response!";
           // chatHistory.value.push({
           //   role: "AI",
-          //   content: md.render(data),
+          //   content: md.render(data[data.length - 1].content),
           //   img: null,
           // });
-          chatHistory.value = data;
+          chatHistory.value = convertChatHistory(data);
           aiThinking.value = false;
         } catch (error) {
           chatHistory.value.push({
@@ -2003,6 +2042,8 @@ export default defineComponent({
       userInput,
       chatHistoryScroll,
       chatHistory,
+      selectedKB,
+      KBOptions,
     };
   },
 });
