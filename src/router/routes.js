@@ -9,6 +9,10 @@ const routes = [
         component: () => import("pages/scene.vue"),
       },
       {
+        path: "project/ADHealthEducation",
+        component: () => import("pages/ADHealthEducationPage.vue"),
+      },
+      {
         path: "project/:sceneType",
         component: () => import("pages/project.vue"),
       },

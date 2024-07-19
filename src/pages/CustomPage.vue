@@ -331,7 +331,7 @@
                 /> -->
               <div
                 v-html="item.content"
-                class="markdown-body-light q-pa-sm"
+                class="markdown-body q-pa-sm"
                 :style="{ backgroundColor: '#ffffff00' }"
               ></div>
               <!-- <q-separator
@@ -515,7 +515,7 @@ import markdownItMark from "markdown-it-mark";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import mime from "mime-types";
-
+import "github-markdown-css/github-markdown-light.css";
 export default defineComponent({
   name: "CustomPage",
   components: {},
