@@ -54,6 +54,7 @@
               />
             </div>
             <q-btn icon="settings" flat round @click="settingDialog = true" />
+            <q-btn icon="sym_r_mop" flat round @click="clean_chat_history" />
             <!-- class="q-my-md" -->
           </div>
 
@@ -2056,6 +2057,41 @@ export default defineComponent({
       chatHistory,
       selectedKB,
       KBOptions,
+      clean_chat_history() {
+        $q.notify({
+          message: "確定要清除對話紀錄?",
+          type: "negative",
+          position: "top",
+          actions: [
+            {
+              label: "取消",
+              color: "white",
+            },
+            {
+              label: "確定",
+              color: "red",
+              class: "bg-white",
+              handler: async () => {
+                try {
+                  const deleteRequest = await api.delete(
+                    "/Project/ChatHistory",
+                    {
+                      data: route.params.projectId,
+                      headers: {
+                        Authorization: "Bearer " + getToken(),
+                      },
+                    }
+                  );
+                  const { data } = deleteRequest;
+                  chatHistory.value = data;
+                } catch (error) {
+                  throw Error(error);
+                }
+              },
+            },
+          ],
+        });
+      },
     };
   },
 });
