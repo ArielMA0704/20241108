@@ -111,6 +111,7 @@ import markdownItMark from "markdown-it-mark";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import mime from "mime-types";
+import "github-markdown-css/github-markdown-light.css";
 
 export default defineComponent({
   name: "ADHealthEducationPage",
