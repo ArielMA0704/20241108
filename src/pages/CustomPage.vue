@@ -1066,7 +1066,28 @@ export default defineComponent({
           }
           if (data.stt_result) {
             sttResult.value = data.stt_result;
-            userInput.value = data.stt_result;
+            // userInput.value = data.stt_result;
+            $q.notify({
+              position: "top",
+              type: "positive",
+              message: "偵測到語音辨識結果，是否帶入?",
+              actions: [
+                {
+                  label: "不帶入",
+                  color: "white",
+                  handler: () => {
+                    /* ... */
+                  },
+                },
+                {
+                  label: "帶入",
+                  color: "white",
+                  handler: () => {
+                    userInput.value = data.stt_result;
+                  },
+                },
+              ],
+            });
           }
           if (data.prompt) {
             prompt.value = data.prompt;
