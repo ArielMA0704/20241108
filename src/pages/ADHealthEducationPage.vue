@@ -184,10 +184,10 @@ export default defineComponent({
       next();
     });
 
-    window.onbeforeunload = async function () {
-      await clearHistory();
-      return null;
-    };
+    // window.onbeforeunload = async function () {
+    //   await clearHistory();
+    //   return null;
+    // };
 
     return {
       aiThinking,

@@ -41,10 +41,10 @@
             />
           </div>
           <div class="flex justify-end" style="flex: 1 1 auto">
-            <div class="flex items-center">
+            <!-- <div class="flex items-center">
               <div>List</div>
               <q-toggle v-model="gridStatus" label="Grid" />
-            </div>
+            </div> -->
             <div class="q-ml-md flex justify-end">
               <q-btn
                 label="New Project"
@@ -171,20 +171,20 @@ export default defineComponent({
         sortable: false,
         field: "project_name",
       },
-      {
-        name: "stt_status",
-        label: "語音辨識狀態",
-        align: "center",
-        sortable: false,
-        field: "stt_status",
-      },
-      {
-        name: "llm_status",
-        label: "語言模型狀態",
-        align: "center",
-        sortable: false,
-        field: "llm_status",
-      },
+      // {
+      //   name: "stt_status",
+      //   label: "語音辨識狀態",
+      //   align: "center",
+      //   sortable: false,
+      //   field: "stt_status",
+      // },
+      // {
+      //   name: "llm_status",
+      //   label: "語言模型狀態",
+      //   align: "center",
+      //   sortable: false,
+      //   field: "llm_status",
+      // },
       {
         name: "generate_time",
         label: "創建時間",

@@ -64,7 +64,7 @@
                 <div class="text-h5">Setting</div>
               </q-card-section>
 
-              <q-card-section class="q-pt-none">
+              <!-- <q-card-section class="q-pt-none">
                 <div class="text-h6">語音辨識</div>
                 <div class="flex column full-width outline q-pa-md">
                   <q-select
@@ -80,8 +80,8 @@
                     label="語音辨識語言"
                   />
                 </div>
-              </q-card-section>
-              <q-card-section>
+              </q-card-section> -->
+              <q-card-section class="q-pt-none">
                 <div class="text-h6">大型語言模型</div>
                 <div class="flex column full-width outline q-pa-md">
                   <div v-if="sceneType != 'Custom' && sceneType != null">
@@ -480,7 +480,7 @@
 
                       <div v-if="recorded">
                         <div class="flex row items-center q-mt-md">
-                          <q-btn label="inference" @click="inference" />
+                          <q-btn label="進行語音辨識" @click="inference" />
                         </div>
                       </div>
                     </div>

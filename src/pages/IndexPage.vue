@@ -77,9 +77,9 @@
                   未上傳
                 </q-chip>
               </div>
-              <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
+              <!-- <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
                 啟動即時辨識，將於錄音開始時，預先清除語音辨識結果
-              </div>
+              </div> -->
             </div>
           </div>
           <div class="flex column full-width outline q-pa-md">
@@ -163,7 +163,7 @@
             </div>
 
             <!-- settings -->
-            <div>
+            <!-- <div>
               <q-select
                 v-model="sttModel"
                 :options="sttModelOption"
@@ -176,11 +176,11 @@
                 :options="sttModel.supportLang"
                 label="語音辨識語言"
               />
-            </div>
+            </div> -->
             <div v-if="recorded">
               <div class="flex row items-center q-mt-md">
-                <q-btn label="inference" @click="inference" />
-                <q-checkbox label="自動產報告" v-model="AutoLLM" />
+                <q-btn label="進行語音辨識" @click="inference" />
+                <!-- <q-checkbox label="自動產報告" v-model="AutoLLM" /> -->
               </div>
             </div>
           </div>
@@ -198,7 +198,7 @@
           <div class="flex">
             <div class="q-pa-sm q-mt-md" style="border-radius: 10px">
               <div class="flex items-center">
-                <div class="text-h6 text-bold">語音辨識結果</div>
+                <div class="text-h6 text-bold">逐字稿</div>
                 <q-chip
                   color="orange"
                   icon="warning"
@@ -217,9 +217,9 @@
                   v-if="trigger"
                 />
               </div>
-              <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
+              <!-- <div class="text-subtitle2" style="color: rgba(0, 0, 0, 0.6)">
                 語音辨識結果會顯示在此，或者你也能把想提供給LLM的內容放在這，如檢驗檢查報告
-              </div>
+              </div> -->
             </div>
           </div>
           <q-input
@@ -245,7 +245,7 @@
           <!-- 提示 (Prompt) -->
           <div class="flex">
             <div class="q-pa-sm q-mt-md" style="border-radius: 10px">
-              <div class="text-h6 text-bold">提示 (Prompt)</div>
+              <div class="text-h6 text-bold">系統提示 (System Prompt)</div>
               <div
                 class="text-subtitle2"
                 style="color: rgba(0, 0, 0, 0.6)"
@@ -257,7 +257,7 @@
           </div>
           <div class="flex column full-width outline q-pa-md">
             <div v-if="sceneType != 'Custom' && sceneType != null">
-              <q-chip color="orange" text-color="white" size="md">
+              <q-chip color="primary" text-color="white" size="md">
                 情境：{{ scene_label }}</q-chip
               >
             </div>
@@ -445,7 +445,7 @@
                 :options="llmOptions"
                 @update:model-value="initLMsettings"
               />
-              <q-btn label="執行" @click="llmInfenence" class="q-ml-md" />
+              <q-btn label="Ask LLM" @click="llmInfenence" class="q-ml-md" />
             </div>
           </div>
 
@@ -454,11 +454,11 @@
             <div class="text-h6 text-bold q-pa-sm" style="border-radius: 10px">
               報告
             </div>
-            <q-btn
+            <!-- <q-btn
               label="feedback"
               class="q-ml-md"
               @click="initFeedbackDialog"
-            />
+            /> -->
             <q-chip
               color="orange"
               icon="warning"
