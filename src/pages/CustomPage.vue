@@ -873,7 +873,7 @@ export default defineComponent({
           }
           if (data.llm_model) {
             let val = llmOptions.value.filter(
-              (res) => res.value == data.llm_model
+              (res) => res.value == data.llm_model.value
             )[0];
             if (val != undefined) {
               llmModel.value = val;
@@ -928,12 +928,12 @@ export default defineComponent({
           }
         }
       } catch (error) {
-        if (error.response.status == 401) {
-          logout();
-        } else {
-          throw new Error(error);
-        }
-        // throw new Error(error);
+        // if (error.response.status == 401) {
+        //   logout();
+        // } else {
+        //   throw new Error(error);
+        // }
+        throw new Error(error);
       }
     }
 
