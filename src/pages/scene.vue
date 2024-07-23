@@ -25,7 +25,7 @@
         class="col-xs-6 col-sm q-pa-xs"
       >
         <!-- q-pa-xs -->
-        <q-card class="full-height">
+        <q-card class="full-height" flat bordered>
           <q-card-actions align="right">
             <q-btn
               flat

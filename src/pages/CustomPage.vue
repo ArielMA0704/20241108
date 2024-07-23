@@ -85,7 +85,7 @@
                 <div class="text-h6">大型語言模型</div>
                 <div class="flex column full-width outline q-pa-md">
                   <div v-if="sceneType != 'Custom' && sceneType != null">
-                    <q-chip color="orange" text-color="white" size="md">
+                    <q-chip color="primary" text-color="white" size="md">
                       情境：{{ scene_label }}</q-chip
                     >
                   </div>
@@ -213,12 +213,12 @@
                           :rules="[(val) => !!val || '請輸入標題']"
                         >
                           <template v-slot:append>
-                            <q-btn
+                            <!-- <q-btn
                               icon="casino"
                               @click="recommendTitle"
                               round
                               flat
-                            />
+                            /> -->
                           </template>
                         </q-input>
                         <q-checkbox
@@ -502,13 +502,6 @@ import { api, baseURL } from "boot/axios";
 import { useQuasar } from "quasar";
 import { checkLogin, getToken } from "boot/account";
 import { useRouter, useRoute, onBeforeRouteLeave } from "vue-router";
-import {
-  RecordRTCPromisesHandler,
-  invokeSaveAsDialog,
-  StereoAudioRecorder,
-} from "recordrtc";
-import VADBuilder, { VADMode, VADEvent } from "@ozymandiasthegreat/vad";
-import dateFormat from "dateformat";
 import MarkdownIt from "markdown-it";
 import emoji from "markdown-it-emoji";
 import markdownItMark from "markdown-it-mark";
@@ -520,31 +513,6 @@ export default defineComponent({
   name: "CustomPage",
   components: {},
   setup() {
-    class Deque {
-      constructor(maxLength) {
-        this.maxLength = maxLength;
-        this.deque = [];
-      }
-
-      push(value) {
-        if (this.deque.length >= this.maxLength) {
-          this.deque.shift();
-        }
-        this.deque.push(value);
-      }
-
-      unshift(value) {
-        if (this.deque.length >= this.maxLength) {
-          this.deque.pop();
-        }
-        this.deque.unshift(value);
-      }
-
-      clear() {
-        this.deque = [];
-      }
-    }
-
     const controller = new AbortController();
     const $q = useQuasar();
     const route = useRoute();
@@ -555,13 +523,6 @@ export default defineComponent({
     let stream = null;
     let chunks = [];
     const trigger = ref(false);
-    let voiced_frames = [];
-    const timeSlice = 100;
-    const padding_ms = 1000;
-    const dequeMaxLength = Math.floor(padding_ms / timeSlice);
-    const ring_buffer = new Deque(dequeMaxLength);
-    const maxFrameLength = Math.floor(20000 / timeSlice);
-    const seg = ref([]);
     let wakeLock = null;
     var mediaTimer = null;
     var dateStarted;
@@ -575,9 +536,6 @@ export default defineComponent({
     const recorded = ref(false);
     const paused = ref(false);
     const audioVis = ref(false);
-    const keepAliveAsr = ref(false);
-    const keepAliveInferencing = ref(false);
-    const keepAliveAsrDisabled = ref(false);
 
     const projectName = ref("");
     const newProjectName = ref("");
@@ -606,24 +564,12 @@ export default defineComponent({
     const promptOptions = ref([]);
     const filteredPromptOptions = ref([]);
     const llmOptions = ref([]);
-    const llmModel = ref("gpt-4");
+    const llmModel = ref("gpt4o");
     const replyTokens = ref(1000);
     const replyTokens_mark_labels = ref([]);
     const replyTokens_maxTokens = ref(3000);
     const llmResult = ref("");
     const llmResultMD = ref("");
-    const depOptions = ref([]);
-    const filterDepOptions = ref([]);
-    const feedbackDialog = ref(false);
-    const feedbackresult = ref({
-      qf1: false,
-      qf2: false,
-      qc1: false,
-      qc2: false,
-      qs1: false,
-      other: "",
-      department: "",
-    });
 
     const md = MarkdownIt({
       breaks: true,
@@ -684,175 +630,7 @@ export default defineComponent({
       });
     }
 
-    function createWavBlob(arrayBuffers, sampleRate, channels) {
-      let totalLength = 0;
-      arrayBuffers.forEach((buffer) => {
-        totalLength += buffer.byteLength;
-      });
-
-      const header = new ArrayBuffer(44);
-      const view = new DataView(header);
-
-      // Chunk ID "RIFF"
-      view.setUint8(0, "R".charCodeAt(0));
-      view.setUint8(1, "I".charCodeAt(0));
-      view.setUint8(2, "F".charCodeAt(0));
-      view.setUint8(3, "F".charCodeAt(0));
-
-      // Chunk Size
-      view.setUint32(4, 36 + totalLength, true);
-
-      // Format "WAVE"
-      view.setUint8(8, "W".charCodeAt(0));
-      view.setUint8(9, "A".charCodeAt(0));
-      view.setUint8(10, "V".charCodeAt(0));
-      view.setUint8(11, "E".charCodeAt(0));
-
-      // Subchunk1 ID "fmt "
-      view.setUint8(12, "f".charCodeAt(0));
-      view.setUint8(13, "m".charCodeAt(0));
-      view.setUint8(14, "t".charCodeAt(0));
-      view.setUint8(15, " ".charCodeAt(0));
-
-      // Subchunk1 Size
-      view.setUint32(16, 16, true);
-
-      // Audio Format PCM (1)
-      view.setUint16(20, 1, true);
-
-      // Number of Channels
-      view.setUint16(22, channels, true);
-
-      // Sample Rate
-      view.setUint32(24, sampleRate, true);
-
-      // Byte Rate
-      view.setUint32(28, sampleRate * channels * 2, true);
-
-      // Block Align
-      view.setUint16(32, channels * 2, true);
-
-      // Bits per Sample
-      view.setUint16(34, 16, true);
-
-      // Subchunk2 ID "data"
-      view.setUint8(36, "d".charCodeAt(0));
-      view.setUint8(37, "a".charCodeAt(0));
-      view.setUint8(38, "t".charCodeAt(0));
-      view.setUint8(39, "a".charCodeAt(0));
-
-      // Subchunk2 Size
-      view.setUint32(40, totalLength, true);
-
-      const wavData = new Uint8Array(header.byteLength + totalLength);
-      console.log(wavData.length);
-
-      wavData.set(new Uint8Array(header), 0);
-
-      let offset = header.byteLength;
-      console.log("frame Length", frames.length);
-      arrayBuffers.forEach((buffer) => {
-        const bufferArray = new Uint8Array(buffer);
-        wavData.set(bufferArray, offset);
-        offset += bufferArray.length;
-      });
-
-      const wavBlob = new Blob([wavData], { type: "audio/wav" });
-
-      return [wavBlob, wavData.length];
-    }
-
-    async function VAD_ASR(blob) {
-      try {
-        keepAliveInferencing.value = true;
-        const formdata = new FormData();
-        formdata.append("file", blob);
-        formdata.append("model", sttModel.value.value);
-        formdata.append("prompt", sttResult.value.slice(-100));
-        if (sttLang.value) {
-          formdata.append("sttLang", sttLang.value);
-        }
-        const post = await api.post("/AI/vadAsr", formdata, {
-          headers: {
-            Authorization: "Bearer " + getToken(),
-          },
-        });
-        const { data } = post;
-        // console.log(data);
-        sttResult.value += data.result;
-        keepAliveInferencing.value = false;
-      } catch (error) {
-        keepAliveInferencing.value = false;
-        console.log(error);
-        throw Error(error);
-      }
-    }
-
-    async function askUploadAudio(blob) {
-      $q.notify({
-        type: "positive",
-        position: "top",
-        message: "是否將音檔上傳至伺服器?",
-        actions: [
-          {
-            label: "取消",
-            color: "white",
-            handler: () => {
-              /* ... */
-            },
-          },
-          {
-            label: "確定",
-            color: "white",
-            handler: async () => {
-              try {
-                const formdata = new FormData();
-                let fileName =
-                  blob.name === undefined ? audioBlobName : blob.name;
-                formdata.append("file", blob, fileName);
-                formdata.append("projectID", route.params.projectId);
-
-                const notif = $q.notify({
-                  group: false, // required to be updatable
-                  // timeout: 0, // we want to be in control when it gets dismissed
-                  spinner: true,
-                  message: "Uploading Audio...",
-                  caption: "0%",
-                  position: "top",
-                });
-
-                const post = await api.post("/Project/saveAudio", formdata, {
-                  headers: {
-                    Authorization: "Bearer " + getToken(),
-                  },
-                  onUploadProgress: (progressEvent) => {
-                    let percentage = (progressEvent.progress * 100).toFixed(2);
-                    notif({
-                      caption: `${percentage}%`,
-                    });
-                    if (percentage === "100.00") {
-                      notif({
-                        icon: "done", // we add an icon
-                        spinner: false, // we reset the spinner setting so the icon can be displayed
-                        message: "Audio Uploaded!",
-                        timeout: 1000, // we will timeout it in 2.5s
-                      });
-                    }
-                  },
-                });
-                const { data } = post;
-                unSave.value.audio = false;
-              } catch (error) {
-                throw Error(error);
-              }
-            },
-          },
-        ],
-      });
-    }
-
     let audioCtx;
-    let vadStatus = false;
     function analysisAudio(stream) {
       if (!audioCtx) {
         audioCtx = new AudioContext();
@@ -1099,6 +877,8 @@ export default defineComponent({
             )[0];
             if (val != undefined) {
               llmModel.value = val;
+            } else {
+              llmModel.value = llmOptions.value[0];
             }
           } else {
             llmModel.value = llmOptions.value[0];
@@ -1363,7 +1143,6 @@ export default defineComponent({
     };
 
     return {
-      router,
       sceneType,
       scene_label,
       recordingDiag,
@@ -1391,7 +1170,6 @@ export default defineComponent({
             message: "無法啟用 Wake Lock，請保持螢幕開啟",
           });
         }
-
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -1404,102 +1182,15 @@ export default defineComponent({
           });
           throw Error(error);
         }
-
         chunks = [];
-
-        const VAD = await VADBuilder();
-        const vad = new VAD(VADMode.VERY_AGGRESSIVE, 16000);
-
-        keepAliveAsrDisabled.value = true;
-        if (keepAliveAsr.value) {
-          if (sttResult.value != "") {
-            $q.notify({
-              type: "warning",
-              position: "top",
-              message: "啟動即時辨識，將於錄音開始時，預先清除語音辨識結果",
-            });
-          }
-          sttResult.value = "";
-          unSave.value.asrResult = true;
-        }
-        // mediaRecorder = new RecordRTCPromisesHandler(stream, {
-        //   type: "audio",
-        //   recorderType: StereoAudioRecorder,
-        //   desiredSampRate: 16000,
-        //   mimeType: "audio/wav",
-        //   timeSlice: timeSlice,
-        //   numberOfAudioChannels: 1,
-        //   ondataavailable: async function (event) {
-        //     // chunks.push(audioData);
-        //     if (keepAliveAsr.value) {
-        //       const audioData = await event.arrayBuffer();
-        //       // console.log(audioData);
-        //       const frame = new Int16Array(audioData);
-        //       const res = vad.processBuffer(frame);
-
-        //       if (!trigger.value) {
-        //         ring_buffer.push({
-        //           frame: audioData,
-        //           is_speech: res,
-        //         });
-        //         let num_voiced = ring_buffer.deque.filter(
-        //           (item) => item.is_speech == 1
-        //         ).length;
-        //         console.log("voiced", num_voiced / dequeMaxLength);
-        //         if (num_voiced > 0.9 * dequeMaxLength) {
-        //           trigger.value = true;
-        //           ring_buffer.deque.forEach((e) => {
-        //             voiced_frames.push(e.frame);
-        //           });
-        //           console.log("Trigger On", voiced_frames.length);
-        //           ring_buffer.clear();
-        //         }
-        //       } else {
-        //         voiced_frames.push(audioData);
-        //         ring_buffer.push({
-        //           frame: audioData,
-        //           is_speech: res,
-        //         });
-        //         let num_unvoiced = ring_buffer.deque.filter(
-        //           (item) => item.is_speech == 0
-        //         ).length;
-        //         console.log("unvoiced", num_unvoiced / dequeMaxLength);
-        //         if (num_unvoiced > 0.9 * dequeMaxLength) {
-        //           trigger.value = false;
-        //           console.log("Trigger Off", voiced_frames.length);
-        //           console.log("send voice");
-        //           var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-        //           // console.log(blob, len);
-        //           VAD_ASR(blob);
-        //           // var url = URL.createObjectURL(blob);
-        //           // seg.value.push({
-        //           //   length: len,
-        //           //   url: url,
-        //           // });
-        //           ring_buffer.clear();
-        //           voiced_frames = [];
-        //         }
-        //       }
-        //       if (voiced_frames.length > maxFrameLength) {
-        //         var [blob, len] = createWavBlob(voiced_frames, 16000, 2);
-        //         VAD_ASR(blob);
-        //         voiced_frames = [];
-        //       }
-        //     }
-        //   },
-        // });
         mediaRecorder = new MediaRecorder(stream, {
           // mimeType: "audio/ogg",
           audioBitsPerSecond: 16000,
         });
-
         analysisAudio(stream);
-
         recording.value = true;
         dateStarted = new Date().getTime();
         recordDuration.value = "00:00";
-
-        // mediaRecorder.startRecording();
         mediaRecorder.start(timeSlice);
         console.log(mediaRecorder.state);
         console.log(
@@ -1507,12 +1198,10 @@ export default defineComponent({
           mediaRecorder.bitsPerSecond
         );
         console.log("Recorder started.");
-
         mediaRecorder.ondataavailable = async function (event) {
           let data = event.data;
           chunks.push(data);
         };
-
         mediaTimer = setInterval(function () {
           // get media amplitude
           recordDurationSeconds = (new Date().getTime() - dateStarted) / 1000;
@@ -1522,39 +1211,11 @@ export default defineComponent({
       recording,
       async stopRecord() {
         $q.loading.show();
-
-        // if (trigger.value) {
-        //   trigger.value = false;
-        //   if (voiced_frames.length > 0) {
-        //     console.log("send voice");
-        //     // var [mergeblob, len] = createWavBlob(voiced_frames, 16000, 2);
-        //     var mergeblob = new Blob(voiced_frames, {
-        //       type: mediaRecorder.mimeType,
-        //     });
-        //     // console.log(blob, len);
-        //     VAD_ASR(mergeblob);
-        //     // var url = URL.createObjectURL(mergeblob);
-        //     // seg.value.push({
-        //     //   length: len,
-        //     //   url: url,
-        //     // });
-        //     ring_buffer.clear();
-        //     voiced_frames = [];
-        //   }
-        // }
-
         recording.value = false;
-        // await mediaRecorder.stopRecording();
-        // let blob = await mediaRecorder.getBlob();
         mediaRecorder.stop();
         console.log(mediaRecorder.state);
         audioCtx = null;
         console.log("Recorder stopped.");
-
-        // audioBlob = blob;
-        // nativeUrl.value = URL.createObjectURL(blob);
-        // audioBlobName = "recording.wav";
-        // console.log(mediaRecorder.mimeType);
         const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
         chunks = [];
         audioBlob = blob;
@@ -1563,19 +1224,13 @@ export default defineComponent({
         recorded.value = true;
         audioVis.value = true;
         paused.value = false;
-        // invokeSaveAsDialog(blob);
         stopStream(stream);
         if (wakeLock) {
           wakeLock.release();
           wakeLock = null;
         }
-
         clearInterval(mediaTimer);
-        keepAliveAsrDisabled.value = false;
         $q.loading.hide();
-        if (keepAliveAsr.value) {
-          askUploadAudio(blob);
-        }
       },
       async pauseRecord() {
         paused.value = true;
@@ -1599,9 +1254,6 @@ export default defineComponent({
       recorded,
       paused,
       audioVis,
-      keepAliveAsr,
-      keepAliveInferencing,
-      keepAliveAsrDisabled,
       recordDuration,
       nativeUrl,
       projectName,
@@ -1627,66 +1279,6 @@ export default defineComponent({
           }
           projectNameEditing.value = false;
         } catch (error) {
-          throw Error(error);
-        }
-      },
-      async saveAsrResult() {
-        try {
-          const post = await api.post(
-            "/Project/saveAsrResult",
-            {
-              projectId: route.params.projectId,
-              asrResult: sttResult.value,
-            },
-            {
-              headers: {
-                Authorization: "Bearer " + getToken(),
-              },
-            }
-          );
-          const { data } = post;
-          $q.notify({
-            type: "positive",
-            position: "top",
-            message: "儲存成功",
-          });
-          unSave.value.asrResult = false;
-        } catch (error) {
-          $q.notify({
-            type: "negative",
-            position: "top",
-            message: error.toString(),
-          });
-          throw Error(error);
-        }
-      },
-      async saveLLMResult() {
-        try {
-          const post = await api.post(
-            "/Project/saveLLMResult",
-            {
-              projectId: route.params.projectId,
-              llmResult: llmResult.value,
-            },
-            {
-              headers: {
-                Authorization: "Bearer " + getToken(),
-              },
-            }
-          );
-          const { data } = post;
-          $q.notify({
-            type: "positive",
-            position: "top",
-            message: "儲存成功",
-          });
-          unSave.value.llmResult = false;
-        } catch (error) {
-          $q.notify({
-            type: "negative",
-            position: "top",
-            message: error.toString(),
-          });
           throw Error(error);
         }
       },
@@ -1779,41 +1371,19 @@ export default defineComponent({
           userInput.value = "語音辨識失敗！！！ \n" + error.toString();
         }
       },
-      updSttModel(value) {
-        if (value.supportLang) {
-          sttLang.value = value.supportLang[0];
-        } else {
-          sttLang.value = null;
-        }
-      },
-      sttResult,
-      sttModelOption,
-      sttModel,
-      sttLang,
-      AutoLLM,
+      // updSttModel(value) {
+      //   if (value.supportLang) {
+      //     sttLang.value = value.supportLang[0];
+      //   } else {
+      //     sttLang.value = null;
+      //   }
+      // },
+      // sttModelOption,
+      // sttModel,
+      // sttLang,
       prompt,
       publicPrompt,
       promptSaveDialog,
-      async recommendTitle() {
-        try {
-          $q.loading.show();
-          const post = await api.post(
-            "/recommendTitle",
-            { text: prompt.value },
-            {
-              headers: {
-                Authorization: "Bearer " + getToken(),
-              },
-            }
-          );
-          const { data } = post;
-          newPrompt.value.label = data;
-          $q.loading.hide();
-        } catch (error) {
-          $q.loading.hide();
-          throw Error(error);
-        }
-      },
       async promptSave() {
         try {
           const post = await api.post(
@@ -1852,112 +1422,20 @@ export default defineComponent({
       defPrompt,
       promptOptions,
       filteredPromptOptions,
-      llmInfenence,
+      filterFn(val, update, abort) {
+        update(() => {
+          const needle = val.toLocaleLowerCase();
+          filteredPromptOptions.value = promptOptions.value.filter(
+            (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
+          );
+        });
+      },
       llmOptions,
       llmModel,
       initLMsettings,
       replyTokens,
       replyTokens_mark_labels,
       replyTokens_maxTokens,
-      llmResult,
-      llmResultMD,
-      setReportMode(value, evt) {
-        if (value) {
-          llmResultMD.value = md.render(llmResult.value);
-        }
-      },
-      reportMD: ref(false),
-      depOptions,
-      filterDepOptions,
-      depFilterFn(val, update, abort) {
-        update(() => {
-          const needle = val.toLowerCase();
-          filterDepOptions.value = depOptions.value.filter(
-            (v) => v.toLowerCase().indexOf(needle) > -1
-          );
-        });
-      },
-      newOption() {
-        $q.dialog({
-          title: "New Option",
-          message: "What is your department?",
-          prompt: {
-            model: "",
-            type: "text", // optional
-          },
-          cancel: true,
-          persistent: true,
-        })
-          .onOk((data) => {
-            // console.log('>>>> OK, received', data)
-            console.log(data);
-            const needle = data.toLowerCase();
-            if (
-              depOptions.value.filter((res) => res.toLowerCase() == needle)
-                .length == 0
-            ) {
-              depOptions.value.push(data);
-              feedbackresult.value.department = data;
-            }
-          })
-          .onCancel(() => {
-            // console.log('>>>> Cancel')
-          })
-          .onDismiss(() => {
-            // console.log('I am triggered on both OK and Cancel')
-          });
-      },
-      feedbackDialog,
-      feedbackresult,
-      async sendFeedback() {
-        try {
-          const post = await api.post(
-            "llmFeedback",
-            {
-              project_id: route.params.projectId,
-              model: llmModel.value.value,
-              text: sttResult.value,
-              prompt: prompt.value,
-              llm_result: llmResult.value,
-              department: feedbackresult.value.department,
-              feedback: feedbackresult.value,
-            },
-            {
-              headers: {
-                Authorization: "Bearer " + getToken(),
-              },
-            }
-          );
-          const { data } = post;
-          $q.notify({
-            position: "top",
-            type: "positive",
-            message: "回饋成功",
-          });
-        } catch (error) {
-          console.log("err" + error);
-          $q.notify({
-            position: "top",
-            type: "negative",
-            message: "回饋失敗",
-          });
-        }
-      },
-      async initFeedbackDialog() {
-        try {
-          const get = await api.get("/departments", {
-            headers: {
-              Authorization: "Bearer " + getToken(),
-            },
-          });
-          const { data } = get;
-          console.log(data);
-          depOptions.value = data;
-          feedbackDialog.value = true;
-        } catch (error) {
-          console.log(error);
-        }
-      },
       async downloadAudio() {
         var bolbUrl = nativeUrl.value;
         if (nativeUrl.value.indexOf("blob:") < 0) {
@@ -1968,35 +1446,11 @@ export default defineComponent({
         link.download = audioBlobName;
         link.click();
       },
-      downloadText(filename, text) {
-        let link = document.createElement("a");
-        link.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
-        link.download = filename;
-        link.click();
-      },
-      async refresh(done) {
-        if (await checkLogin()) {
-          await getOptions(route.params.sceneType);
-          await getProjectData(route.params.projectId);
-        }
-        done();
-      },
       goback() {
         controller.abort();
         router.go(-1);
       },
-      seg,
       unSave,
-      trigger,
-      filterFn(val, update, abort) {
-        update(() => {
-          const needle = val.toLocaleLowerCase();
-          filteredPromptOptions.value = promptOptions.value.filter(
-            (v) => v.label.toLocaleLowerCase().indexOf(needle) > -1
-          );
-        });
-      },
-
       setModel(val) {
         defPrompt.value = val;
       },
@@ -2010,7 +1464,6 @@ export default defineComponent({
         setTimeout(() => {
           chatHistoryScroll.value.setScrollPercentage("vertical", 1, 300);
         }, 500);
-
         const formdata = new FormData();
         formdata.append("projectID", route.params.projectId);
         formdata.append("text", userInput.value);
@@ -2021,7 +1474,6 @@ export default defineComponent({
         if (selectedKB.value) {
           formdata.append("referenceID", selectedKB.value.value);
         }
-
         userInput.value = "";
         // userInputImg.value = null;
         // imageInput.value = null;

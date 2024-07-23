@@ -90,10 +90,7 @@
           />
         </template>
         <template v-slot:item="props">
-          <div
-            class="q-pa-xs col-xs-6 col-sm-3 col-md-2 col-xl-1"
-            style="max-height: 340px"
-          >
+          <div class="q-pa-xs col-xs-6 col-sm-3 col-md-2 col-xl-1">
             <q-card @click="toDetail(props.row.id)" class="full-height">
               <!-- class="full-height" -->
               <q-card-section>
