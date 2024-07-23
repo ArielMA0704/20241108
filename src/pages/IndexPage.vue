@@ -384,21 +384,21 @@
                       <div class="q-pa-sm" style="border-radius: 10px">
                         <div class="flex items-center">
                           <div class="text-h6 text-bold">語音輸入</div>
-                          <q-chip
+                          <!-- <q-chip
                             color="orange"
                             icon="warning"
                             text-color="white"
                             v-if="unSave.audio"
                           >
                             未上傳
-                          </q-chip>
+                          </q-chip> -->
                         </div>
-                        <div
+                        <!-- <div
                           class="text-subtitle2"
                           style="color: rgba(0, 0, 0, 0.6)"
                         >
                           啟動即時辨識，將於錄音開始時，預先清除語音辨識結果
-                        </div>
+                        </div> -->
                       </div>
                     </div>
                     <div class="flex column full-width outline q-pa-md">
@@ -523,6 +523,7 @@ export default defineComponent({
     let stream = null;
     let chunks = [];
     const trigger = ref(false);
+    const timeSlice = 100;
     let wakeLock = null;
     var mediaTimer = null;
     var dateStarted;
