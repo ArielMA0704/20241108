@@ -873,7 +873,7 @@ export default defineComponent({
           }
           if (data.llm_model) {
             let val = llmOptions.value.filter(
-              (res) => res.value == data.llm_model.value
+              (res) => res.value == data.llm_model
             )[0];
             if (val != undefined) {
               llmModel.value = val;
