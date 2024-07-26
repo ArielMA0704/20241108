@@ -37,7 +37,7 @@
           </q-card-actions>
           <q-card-section @click="toProject(item.name)">
             <div class="flex column justify-center items-center content-center">
-              <q-avatar size="90px">
+              <q-avatar size="110px">
                 <img :src="item.avatar" />
               </q-avatar>
               <div class="q-mt-md text-center">{{ item.label }}</div>
