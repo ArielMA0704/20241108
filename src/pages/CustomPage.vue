@@ -6,7 +6,7 @@
       style="height: inherit"
     >
       <div
-        class="flex column no-wrap full-height justify-start items-start q-my-md"
+        class="flex column no-wrap full-height justify-start items-start q-mt-md"
         style="width: 90%"
       >
         <div class="full-width">
@@ -298,12 +298,10 @@
           <!-- <q-separator /> -->
         </div>
 
-        <div class="flex column q-mb-md fit">
-          <q-scroll-area
-            ref="chatHistoryScroll"
-            class="outline col-grow"
-            style="border-radius: 10px"
-          >
+        <div class="flex column q-mb-md fit no-wrap">
+          <q-scroll-area ref="chatHistoryScroll" class="full-height outline">
+            <!-- class="outline col-grow"
+            style="border-radius: 10px" -->
             <div
               v-for="item in chatHistory"
               :key="item.id"
@@ -346,8 +344,13 @@
             </div>
           </q-scroll-area>
           <div
-            class="q-mt-md outline flex col-shrink items-center"
-            style="height: 50px; border-radius: 10px"
+            class="q-mt-md outline flex col-grow items-center"
+            style="
+              min-height: 50px;
+              height: auto;
+              /* max-height: 200px; */
+              border-radius: 10px;
+            "
           >
             <div class="flex col-shrink">
               <q-file
@@ -365,7 +368,6 @@
               class="col-grow"
               @ready="setupQL"
               :options="quillOption"
-              style="max-height: 50px"
             />
             <div class="flex col-shrink">
               <q-btn icon="mic" flat @click="recordingDiag = true" />
@@ -1606,7 +1608,7 @@ export default defineComponent({
 </style>
 <style lang="sass">
 .ql-editor
-  max-height: 50px
+  max-height: 200px
 
 .ql-editor img
   max-height: 30px
