@@ -361,10 +361,11 @@
             </div>
             <QuillEditor
               v-model:content="userInput"
-              theme="bubble"
+              theme=""
               class="col-grow"
               @ready="setupQL"
               :options="quillOption"
+              style="max-height: 50px"
             />
             <div class="flex col-shrink">
               <q-btn icon="mic" flat @click="recordingDiag = true" />
@@ -504,8 +505,8 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
-import { QuillEditor, Quill } from "@vueup/vue-quill";
-import "@vueup/vue-quill/dist/vue-quill.bubble.css";
+import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
 
 export default defineComponent({
   name: "CustomPage",
@@ -606,12 +607,6 @@ export default defineComponent({
     const currentQuill = ref(null);
     const quillOption = ref({
       placeholder: "Write here.",
-      styles: {
-        ".ql-editor img": {
-          maxHeight: "60px",
-          maxWidth: "unset",
-        },
-      },
     });
 
     const imageInput = ref(null);
@@ -1573,20 +1568,27 @@ export default defineComponent({
       imageInput,
       insertImage(value) {
         // userInputImg.value = URL.createObjectURL(value);
+        const promise = new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(value);
+        });
+        promise.then((image) => {
+          const range = currentQuill.value.getSelection(true);
+          const update = new Delta().retain(range.index).delete(range.length);
+          update.insert({ image });
+          console.log(update);
 
-        let url = null;
-        const fileReader = new FileReader();
-        fileReader.addEventListener(
-          "load",
-          () => {
-            url = fileReader.result;
-            // console.log(url);
-            const range = currentQuill.value.getSelection(true);
-            currentQuill.value.insertEmbed(range.index, "image", url);
-          },
-          false
-        );
-        fileReader.readAsDataURL(value);
+          userInput.value = userInput.value.compose(update);
+          currentQuill.value.setSelection(
+            range.index + 1,
+            Quill.sources.SILENT
+          );
+          currentQuill.value.update();
+          imageInput.value = null;
+        });
       },
     };
   },
@@ -1603,7 +1605,10 @@ export default defineComponent({
   width: calc(50% - 20px)
 </style>
 <style lang="sass">
-.ql-bubble .ql-editor img
+.ql-editor
+  max-height: 50px
+
+.ql-editor img
   max-height: 30px
   border: 1px solid blue
 </style>
