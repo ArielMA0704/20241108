@@ -6,15 +6,11 @@
       style="height: inherit"
     >
       <div
-        class="flex column no-wrap full-height justify-start items-start q-my-md"
+        class="flex column no-wrap full-height justify-start items-start q-mt-md"
         style="width: 90%"
       >
-        <div class="q-mb-md fit">
-          <q-scroll-area
-            class="outline"
-            style="height: 80%; border-radius: 10px"
-            ref="chatHistoryScroll"
-          >
+        <div class="flex column q-mb-md fit no-wrap">
+          <q-scroll-area class="full-height outline" ref="chatHistoryScroll">
             <div
               v-for="item in chatHistory"
               :key="item.id"
@@ -33,13 +29,6 @@
                 </q-avatar>
                 <div class="text-h6 q-ml-md">AI</div>
               </div>
-              <!-- <q-img
-                  v-if="item.img"
-                  :src="item.img"
-                  style="max-height: 120px; max-width: 120px"
-                  class="q-ma-sm"
-                  fit="contain"
-                /> -->
               <div
                 v-html="item.content"
                 class="markdown-body q-pa-sm"
@@ -56,33 +45,28 @@
               <q-spinner-dots color="primary" size="2em" />
             </div>
           </q-scroll-area>
-          <div class="q-mt-md outline" style="height: 20%; border-radius: 10px">
-            <q-scroll-area
-              class="flex column no-warp"
-              style="height: calc(100% - 36px)"
-            >
-              <q-input autogrow v-model="userInput" class="q-pa-sm" />
-              <!-- <q-img
-                  v-if="userInputImg"
-                  :src="userInputImg"
-                  style="max-height: 120px; max-width: 120px"
-                  class="q-ma-sm"
-                  fit="contain"
-                /> -->
-            </q-scroll-area>
-            <div class="flex justify-end">
-              <!-- <q-file
-                  v-model:model-value="imageInput"
-                  style="width: 0px; height: 0px"
-                  ref="imageUpload"
-                  @update:model-value="insertImage"
-                  accept="image/*"
-                /> -->
-              <!-- <q-btn
-                  icon="image"
-                  @click="imageUpload.pickFiles()"
-                  :disable="imageBtnDisable"
-                /> -->
+          <div
+            class="q-mt-md outline flex col-grow items-center"
+            style="min-height: 50px; height: auto; border-radius: 10px"
+          >
+            <!-- <div class="flex col-shrink"> -->
+            <!-- <q-file
+                v-model:model-value="imageInput"
+                style="width: 0px; height: 0px"
+                ref="imageUpload"
+                @update:model-value="insertImage"
+                accept="image/*"
+              />
+              <q-btn icon="image" flat @click="imageUpload.pickFiles()" /> -->
+            <!-- </div> -->
+            <QuillEditor
+              v-model:content="userInput"
+              theme=""
+              class="col-grow"
+              @ready="setupQL"
+              :options="quillOption"
+            />
+            <div class="flex col-shrink">
               <q-btn icon="send" @click="sendChat" flat />
             </div>
           </div>
@@ -112,10 +96,12 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
+import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
 
 export default defineComponent({
   name: "ADHealthEducationPage",
-  components: {},
+  components: { QuillEditor },
   setup() {
     let session_id = null;
 
@@ -140,6 +126,36 @@ export default defineComponent({
     });
     md.use(emoji);
     md.use(markdownItMark);
+
+    const currentQuill = ref(null);
+    const quillOption = ref({
+      placeholder: "Write here.",
+    });
+
+    function DeltaParser(data) {
+      const opsList = data.ops;
+      let text = "";
+      let images = [];
+      let mdText = "";
+      for (let i = 0; i < opsList.length; i++) {
+        // console.log(typeof opsList[i].insert);
+        if (typeof opsList[i].insert === "string") {
+          text += opsList[i].insert;
+          mdText += opsList[i].insert;
+        } else {
+          images.push(opsList[i].insert.image);
+          mdText += " ![](" + opsList[i].insert.image + "){height=100}";
+        }
+      }
+      // console.log(text);
+      // console.log(images);
+      // console.log(md.render(mdText));
+      return {
+        text: text,
+        images: images,
+        mdText: mdText,
+      };
+    }
 
     function convertChatHistory(ChatHistoryOrg) {
       for (var i = 0; i < ChatHistoryOrg.length; i++) {
@@ -195,9 +211,12 @@ export default defineComponent({
       chatHistoryScroll,
       chatHistory,
       async sendChat() {
+        let res = DeltaParser(userInput.value);
+        console.log(res);
+
         chatHistory.value.push({
           role: "USER",
-          content: md.render(userInput.value),
+          content: md.render(res.text),
           // img: userInputImg.value,
         });
         setTimeout(() => {
@@ -206,14 +225,12 @@ export default defineComponent({
 
         const formdata = new FormData();
         // formdata.append("projectID", route.params.projectId);
-        formdata.append("text", userInput.value);
+        formdata.append("text", res.text);
         formdata.append("chatBotName", "AD");
         formdata.append("chat_history_uuid", session_id);
 
-        userInput.value = "";
-        // userInputImg.value = null;
-        // imageInput.value = null;
-        // imageBtnDisable.value = false;
+        userInput.value = new Delta();
+        currentQuill.value.update();
         try {
           aiThinking.value = true;
           const post = await api.post("/AI/ChatBotLLM", formdata, {
@@ -240,6 +257,11 @@ export default defineComponent({
           throw Error(error);
         }
       },
+      quillOption,
+      setupQL(quill) {
+        currentQuill.value = quill;
+        userInput.value = currentQuill.value.getContents();
+      },
     };
   },
 });
@@ -253,4 +275,8 @@ export default defineComponent({
 
 .hrDiv
   width: calc(50% - 20px)
+</style>
+<style lang="sass">
+.ql-editor
+  max-height: 200px
 </style>
