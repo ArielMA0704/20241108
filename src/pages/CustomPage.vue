@@ -6,7 +6,7 @@
       style="height: inherit"
     >
       <div
-        class="flex column no-wrap full-height justify-start items-start q-my-md"
+        class="flex column no-wrap full-height justify-start items-start q-mt-md"
         style="width: 90%"
       >
         <div class="full-width">
@@ -298,12 +298,10 @@
           <!-- <q-separator /> -->
         </div>
 
-        <div class="q-mb-md fit">
-          <q-scroll-area
-            class="outline"
-            style="height: 80%; border-radius: 10px"
-            ref="chatHistoryScroll"
-          >
+        <div class="flex column q-mb-md fit no-wrap">
+          <q-scroll-area ref="chatHistoryScroll" class="full-height outline">
+            <!-- class="outline col-grow"
+            style="border-radius: 10px" -->
             <div
               v-for="item in chatHistory"
               :key="item.id"
@@ -345,46 +343,42 @@
               <q-spinner-dots color="primary" size="2em" />
             </div>
           </q-scroll-area>
-          <div class="q-mt-md outline" style="height: 20%; border-radius: 10px">
-            <q-scroll-area
-              class="flex column no-warp"
-              style="height: calc(100% - 36px)"
-            >
-              <q-input autogrow v-model="userInput" class="q-pa-sm" />
-              <!-- <q-img
-                  v-if="userInputImg"
-                  :src="userInputImg"
-                  style="max-height: 120px; max-width: 120px"
-                  class="q-ma-sm"
-                  fit="contain"
-                /> -->
-            </q-scroll-area>
-            <div class="flex justify-end">
-              <!-- <q-file
-                  v-model:model-value="imageInput"
-                  style="width: 0px; height: 0px"
-                  ref="imageUpload"
-                  @update:model-value="insertImage"
-                  accept="image/*"
-                /> -->
-              <!-- <q-btn
-                  icon="image"
-                  @click="imageUpload.pickFiles()"
-                  :disable="imageBtnDisable"
-                /> -->
+          <div
+            class="q-mt-md outline flex col-grow items-center"
+            style="min-height: 50px; height: auto; border-radius: 10px"
+          >
+            <div class="flex col-shrink">
+              <q-file
+                v-model:model-value="imageInput"
+                style="width: 0px; height: 0px"
+                ref="imageUpload"
+                @update:model-value="insertImage"
+                accept="image/*"
+              />
+              <q-btn icon="image" flat @click="imageUpload.pickFiles()" />
+            </div>
+            <QuillEditor
+              v-model:content="userInput"
+              theme=""
+              class="col-grow"
+              @ready="setupQL"
+              :options="quillOption"
+            />
+            <div class="flex col-shrink">
               <q-btn icon="mic" flat @click="recordingDiag = true" />
               <q-btn icon="send" @click="sendChat" flat />
             </div>
-            <q-dialog v-model="recordingDiag" class="full-width">
-              <q-card style="width: 80vw">
-                <q-card-section>
-                  <!-- 語音輸入 -->
-                  <div class="flex q-ma-sm">
-                    <div class="flex">
-                      <div class="q-pa-sm" style="border-radius: 10px">
-                        <div class="flex items-center">
-                          <div class="text-h6 text-bold">語音輸入</div>
-                          <!-- <q-chip
+          </div>
+          <q-dialog v-model="recordingDiag" class="full-width">
+            <q-card style="width: 80vw">
+              <q-card-section>
+                <!-- 語音輸入 -->
+                <div class="flex q-ma-sm">
+                  <div class="flex">
+                    <div class="q-pa-sm" style="border-radius: 10px">
+                      <div class="flex items-center">
+                        <div class="text-h6 text-bold">語音輸入</div>
+                        <!-- <q-chip
                             color="orange"
                             icon="warning"
                             text-color="white"
@@ -392,103 +386,102 @@
                           >
                             未上傳
                           </q-chip> -->
-                        </div>
-                        <!-- <div
+                      </div>
+                      <!-- <div
                           class="text-subtitle2"
                           style="color: rgba(0, 0, 0, 0.6)"
                         >
                           啟動即時辨識，將於錄音開始時，預先清除語音辨識結果
                         </div> -->
+                    </div>
+                  </div>
+                  <div class="flex column full-width outline q-pa-md">
+                    <!-- input -->
+                    <div
+                      class="flex row justify-start items-center"
+                      v-if="!recorded"
+                    >
+                      <q-btn @click="startRecord" v-if="!recording">
+                        <q-icon name="radio_button_checked" color="red" />
+                        <div class="q-ml-xs">Rec</div>
+                      </q-btn>
+                      <div v-else>
+                        <q-btn @click="stopRecord" icon="stop" label="Stop" />
+                        <q-btn
+                          @click="pauseRecord"
+                          icon="sym_r_pause"
+                          label="Pause"
+                          v-if="!paused"
+                          class="q-ml-md"
+                        />
+                        <q-btn
+                          @click="resumeRecord"
+                          icon="sym_r_resume"
+                          label="Resume"
+                          v-else
+                          class="q-ml-md"
+                        />
+                      </div>
+                      <q-btn
+                        @click="audioFileInput.pickFiles()"
+                        icon="upload"
+                        v-if="!recording"
+                        class="q-ml-md"
+                        label="upload"
+                      />
+                      <q-file
+                        ref="audioFileInput"
+                        v-model="audiofile"
+                        filled
+                        @update:model-value="userUploadFile"
+                        v-if="!recording"
+                        style="height: 0px; width: 0px; visibility: hidden"
+                        accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
+                      />
+                      <div v-if="recording" class="text-h6 q-ml-md">
+                        {{ recordDuration }}
                       </div>
                     </div>
-                    <div class="flex column full-width outline q-pa-md">
-                      <!-- input -->
-                      <div
-                        class="flex row justify-start items-center"
-                        v-if="!recorded"
-                      >
-                        <q-btn @click="startRecord" v-if="!recording">
-                          <q-icon name="radio_button_checked" color="red" />
-                          <div class="q-ml-xs">Rec</div>
-                        </q-btn>
-                        <div v-else>
-                          <q-btn @click="stopRecord" icon="stop" label="Stop" />
-                          <q-btn
-                            @click="pauseRecord"
-                            icon="sym_r_pause"
-                            label="Pause"
-                            v-if="!paused"
-                            class="q-ml-md"
-                          />
-                          <q-btn
-                            @click="resumeRecord"
-                            icon="sym_r_resume"
-                            label="Resume"
-                            v-else
-                            class="q-ml-md"
-                          />
-                        </div>
-                        <q-btn
-                          @click="audioFileInput.pickFiles()"
-                          icon="upload"
-                          v-if="!recording"
-                          class="q-ml-md"
-                          label="upload"
-                        />
-                        <q-file
-                          ref="audioFileInput"
-                          v-model="audiofile"
-                          filled
-                          @update:model-value="userUploadFile"
-                          v-if="!recording"
-                          style="height: 0px; width: 0px; visibility: hidden"
-                          accept="audio/*, .mp3, .m4a, .amr, .wav, .flac, .aac, .wma, .aiff, .opus"
-                        />
-                        <div v-if="recording" class="text-h6 q-ml-md">
-                          {{ recordDuration }}
-                        </div>
-                      </div>
 
-                      <!-- audio -->
-                      <div
-                        class="flex row items-center full-width"
-                        v-if="audioVis && recorded"
-                      >
-                        <audio
-                          :src="nativeUrl"
-                          controls
-                          id="audioComp"
-                          v-if="audioVis"
-                          class="audioStyle"
-                        ></audio>
-                        <q-btn
-                          @click="recorded = false"
-                          icon="close"
-                          flat
-                          class="bg-red text-white q-ml-md"
-                          padding="xs"
-                        />
-                        <q-btn
-                          icon="download"
-                          flat
-                          class="q-ml-xs"
-                          padding="xs"
-                          unelevated
-                          @click="downloadAudio"
-                        />
-                      </div>
+                    <!-- audio -->
+                    <div
+                      class="flex row items-center full-width"
+                      v-if="audioVis && recorded"
+                    >
+                      <audio
+                        :src="nativeUrl"
+                        controls
+                        id="audioComp"
+                        v-if="audioVis"
+                        class="audioStyle"
+                      ></audio>
+                      <q-btn
+                        @click="recorded = false"
+                        icon="close"
+                        flat
+                        class="bg-red text-white q-ml-md"
+                        padding="xs"
+                      />
+                      <q-btn
+                        icon="download"
+                        flat
+                        class="q-ml-xs"
+                        padding="xs"
+                        unelevated
+                        @click="downloadAudio"
+                      />
+                    </div>
 
-                      <div v-if="recorded">
-                        <div class="flex row items-center q-mt-md">
-                          <q-btn label="進行語音辨識" @click="inference" />
-                        </div>
+                    <div v-if="recorded">
+                      <div class="flex row items-center q-mt-md">
+                        <q-btn label="進行語音辨識" @click="inference" />
                       </div>
                     </div>
                   </div>
-                </q-card-section>
-              </q-card>
-            </q-dialog>
-          </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </q-dialog>
         </div>
       </div>
     </div>
@@ -507,11 +500,15 @@ import emoji from "markdown-it-emoji";
 import markdownItMark from "markdown-it-mark";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
+import markdownItAttrs from "markdown-it-attrs";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
+import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
+
 export default defineComponent({
   name: "CustomPage",
-  components: {},
+  components: { QuillEditor },
   setup() {
     const controller = new AbortController();
     const $q = useQuasar();
@@ -588,6 +585,7 @@ export default defineComponent({
     });
     md.use(emoji);
     md.use(markdownItMark);
+    md.use(markdownItAttrs);
 
     const chatHistory = ref([]);
     const chatHistoryScroll = ref(null);
@@ -604,6 +602,13 @@ export default defineComponent({
 
     const selectedKB = ref(null);
     const KBOptions = ref([]);
+
+    const currentQuill = ref(null);
+    const quillOption = ref({
+      placeholder: "Write here.",
+    });
+
+    const imageInput = ref(null);
 
     function calculateTimeDuration(secs) {
       var hr = Math.floor(secs / 3600);
@@ -623,6 +628,31 @@ export default defineComponent({
       }
 
       return hr + ":" + min + ":" + sec;
+    }
+
+    function DeltaParser(data) {
+      const opsList = data.ops;
+      let text = "";
+      let images = [];
+      let mdText = "";
+      for (let i = 0; i < opsList.length; i++) {
+        // console.log(typeof opsList[i].insert);
+        if (typeof opsList[i].insert === "string") {
+          text += opsList[i].insert;
+          mdText += opsList[i].insert;
+        } else {
+          images.push(opsList[i].insert.image);
+          mdText += " ![](" + opsList[i].insert.image + "){height=100}";
+        }
+      }
+      // console.log(text);
+      // console.log(images);
+      // console.log(md.render(mdText));
+      return {
+        text: text,
+        images: images,
+        mdText: mdText,
+      };
     }
 
     function stopStream(stream) {
@@ -735,7 +765,16 @@ export default defineComponent({
           if (checkASR) {
             if (data.stt_status == "FINISHED") {
               sttResult.value = data.stt_result;
-              userInput.value = data.stt_result;
+              const range = currentQuill.value.getSelection(true);
+              userInput.value = new Delta().insert(data.stt_result);
+              currentQuill.value.update();
+              setTimeout(() => {
+                currentQuill.value.setSelection(
+                  range.index + data.stt_result.length,
+                  Quill.sources.SILENT
+                );
+              }, 50);
+
               $q.notify({
                 position: "top",
                 type: "positive",
@@ -846,7 +885,6 @@ export default defineComponent({
           }
           if (data.stt_result) {
             sttResult.value = data.stt_result;
-            // userInput.value = data.stt_result;
             $q.notify({
               position: "top",
               type: "positive",
@@ -863,7 +901,15 @@ export default defineComponent({
                   label: "帶入",
                   color: "white",
                   handler: () => {
-                    userInput.value = data.stt_result;
+                    const range = currentQuill.value.getSelection(true);
+                    userInput.value = new Delta().insert(data.stt_result);
+                    currentQuill.value.update();
+                    setTimeout(() => {
+                      currentQuill.value.setSelection(
+                        range.index + data.stt_result.length,
+                        Quill.sources.SILENT
+                      );
+                    }, 50);
                   },
                 },
               ],
@@ -1353,7 +1399,17 @@ export default defineComponent({
           // const post = await api.get("apitest");
           const { data } = post;
           sttResult.value = data.text;
-          userInput.value = data.text;
+
+          const range = currentQuill.value.getSelection(true);
+          userInput.value = new Delta().insert(data.text);
+          currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + data.text.length,
+              Quill.sources.SILENT
+            );
+          }, 50);
+
           unSave.value.audio = false;
           unSave.value.asrResult = false;
           if (data.cancelAutoLLM) {
@@ -1369,7 +1425,16 @@ export default defineComponent({
           console.log("err" + error);
           $q.loading.hide();
           sttResult.value = "語音辨識失敗！！！ \n" + error.toString();
-          userInput.value = "語音辨識失敗！！！ \n" + error.toString();
+          const text = "語音辨識失敗！！！ \n" + error.toString();
+          const range = currentQuill.value.getSelection(true);
+          userInput.value = new Delta().insert(text);
+          currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + text,
+              Quill.sources.SILENT
+            );
+          }, 50);
         }
       },
       // updSttModel(value) {
@@ -1457,9 +1522,12 @@ export default defineComponent({
       },
       settingDialog: ref(false),
       async sendChat() {
+        // console.log(userInput.value);
+        let res = DeltaParser(userInput.value);
+
         chatHistory.value.push({
           role: "USER",
-          content: md.render(userInput.value),
+          content: md.render(res.mdText),
           // img: userInputImg.value,
         });
         setTimeout(() => {
@@ -1467,7 +1535,12 @@ export default defineComponent({
         }, 500);
         const formdata = new FormData();
         formdata.append("projectID", route.params.projectId);
-        formdata.append("text", userInput.value);
+        formdata.append("text", res.text);
+        res.images.forEach((e) => {
+          formdata.append("image", e);
+        });
+
+        formdata.append("mdText", res.mdText);
         formdata.append("model", llmModel.value.value);
         formdata.append("prompt", prompt.value);
         formdata.append("replyTokens", replyTokens.value);
@@ -1475,10 +1548,9 @@ export default defineComponent({
         if (selectedKB.value) {
           formdata.append("referenceID", selectedKB.value.value);
         }
-        userInput.value = "";
-        // userInputImg.value = null;
-        // imageInput.value = null;
-        // imageBtnDisable.value = false;
+        userInput.value = new Delta();
+        currentQuill.value.update();
+
         try {
           aiThinking.value = true;
           const post = await api.post("/AI/LLM", formdata, {
@@ -1488,11 +1560,6 @@ export default defineComponent({
           });
           const { data } = post;
           // const data = "Currently no AI response!";
-          // chatHistory.value.push({
-          //   role: "AI",
-          //   content: md.render(data[data.length - 1].content),
-          //   img: null,
-          // });
           chatHistory.value = convertChatHistory(data);
           aiThinking.value = false;
         } catch (error) {
@@ -1545,6 +1612,39 @@ export default defineComponent({
           ],
         });
       },
+      currentQuill,
+      quillOption,
+      setupQL(quill) {
+        currentQuill.value = quill;
+        userInput.value = currentQuill.value.getContents();
+      },
+      imageUpload: ref(null),
+      imageInput,
+      insertImage(value) {
+        // userInputImg.value = URL.createObjectURL(value);
+        const promise = new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(value);
+        });
+        promise.then((image) => {
+          const range = currentQuill.value.getSelection(true);
+          const update = new Delta().retain(range.index).delete(range.length);
+          update.insert({ image });
+          userInput.value = userInput.value.compose(update);
+          currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + 1,
+              Quill.sources.SILENT
+            );
+          }, 50);
+
+          imageInput.value = null;
+        });
+      },
     };
   },
 });
@@ -1558,4 +1658,12 @@ export default defineComponent({
 
 .hrDiv
   width: calc(50% - 20px)
+</style>
+<style lang="sass">
+.ql-editor
+  max-height: 200px
+
+.ql-editor img
+  max-height: 30px
+  border: 1px solid blue
 </style>
