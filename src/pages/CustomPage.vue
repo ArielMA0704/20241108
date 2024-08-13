@@ -357,13 +357,7 @@
               />
               <q-btn icon="image" flat @click="imageUpload.pickFiles()" />
             </div>
-            <QuillEditor
-              v-model:content="userInput"
-              theme=""
-              class="col-grow"
-              @ready="setupQL"
-              :options="quillOption"
-            />
+            <div id="editor" class="col"></div>
             <div class="flex col-shrink">
               <q-btn icon="mic" flat @click="recordingDiag = true" />
               <q-btn icon="send" @click="sendChat" flat />
@@ -503,12 +497,12 @@ import "highlight.js/styles/github.css";
 import markdownItAttrs from "markdown-it-attrs";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
-import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
-import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import Quill from "quill";
+import "quill/dist/quill.core.css";
 
 export default defineComponent({
   name: "CustomPage",
-  components: { QuillEditor },
+  components: {},
   setup() {
     const controller = new AbortController();
     const $q = useQuasar();
@@ -603,10 +597,15 @@ export default defineComponent({
     const selectedKB = ref(null);
     const KBOptions = ref([]);
 
-    const currentQuill = ref(null);
-    const quillOption = ref({
+    let quill = null;
+    const options = {
+      debug: "info",
+      modules: {
+        toolbar: false,
+      },
       placeholder: "Write here.",
-    });
+      theme: "snow",
+    };
 
     const imageInput = ref(null);
 
@@ -765,15 +764,7 @@ export default defineComponent({
           if (checkASR) {
             if (data.stt_status == "FINISHED") {
               sttResult.value = data.stt_result;
-              const range = currentQuill.value.getSelection(true);
-              userInput.value = new Delta().insert(data.stt_result);
-              currentQuill.value.update();
-              setTimeout(() => {
-                currentQuill.value.setSelection(
-                  range.index + data.stt_result.length,
-                  Quill.sources.SILENT
-                );
-              }, 50);
+              quill.setText(data.stt_result);
 
               $q.notify({
                 position: "top",
@@ -901,15 +892,7 @@ export default defineComponent({
                   label: "帶入",
                   color: "white",
                   handler: () => {
-                    const range = currentQuill.value.getSelection(true);
-                    userInput.value = new Delta().insert(data.stt_result);
-                    currentQuill.value.update();
-                    setTimeout(() => {
-                      currentQuill.value.setSelection(
-                        range.index + data.stt_result.length,
-                        Quill.sources.SILENT
-                      );
-                    }, 50);
+                    quill.setText(data.stt_result);
                   },
                 },
               ],
@@ -1164,6 +1147,7 @@ export default defineComponent({
         await getProjectData(route.params.projectId);
         await getChatHistory(route.params.projectId);
         await getUserDefaultReplyTokens();
+        quill = new Quill("#editor", options);
       }
     });
 
@@ -1399,16 +1383,7 @@ export default defineComponent({
           // const post = await api.get("apitest");
           const { data } = post;
           sttResult.value = data.text;
-
-          const range = currentQuill.value.getSelection(true);
-          userInput.value = new Delta().insert(data.text);
-          currentQuill.value.update();
-          setTimeout(() => {
-            currentQuill.value.setSelection(
-              range.index + data.text.length,
-              Quill.sources.SILENT
-            );
-          }, 50);
+          quill.setText(data.text);
 
           unSave.value.audio = false;
           unSave.value.asrResult = false;
@@ -1426,15 +1401,7 @@ export default defineComponent({
           $q.loading.hide();
           sttResult.value = "語音辨識失敗！！！ \n" + error.toString();
           const text = "語音辨識失敗！！！ \n" + error.toString();
-          const range = currentQuill.value.getSelection(true);
-          userInput.value = new Delta().insert(text);
-          currentQuill.value.update();
-          setTimeout(() => {
-            currentQuill.value.setSelection(
-              range.index + text,
-              Quill.sources.SILENT
-            );
-          }, 50);
+          quill.setText(text);
         }
       },
       // updSttModel(value) {
@@ -1523,7 +1490,7 @@ export default defineComponent({
       settingDialog: ref(false),
       async sendChat() {
         // console.log(userInput.value);
-        let res = DeltaParser(userInput.value);
+        let res = DeltaParser(quill.getContents());
 
         chatHistory.value.push({
           role: "USER",
@@ -1548,8 +1515,7 @@ export default defineComponent({
         if (selectedKB.value) {
           formdata.append("referenceID", selectedKB.value.value);
         }
-        userInput.value = new Delta();
-        currentQuill.value.update();
+        quill.setText("");
 
         try {
           aiThinking.value = true;
@@ -1612,12 +1578,6 @@ export default defineComponent({
           ],
         });
       },
-      currentQuill,
-      quillOption,
-      setupQL(quill) {
-        currentQuill.value = quill;
-        userInput.value = currentQuill.value.getContents();
-      },
       imageUpload: ref(null),
       imageInput,
       insertImage(value) {
@@ -1630,18 +1590,9 @@ export default defineComponent({
           reader.readAsDataURL(value);
         });
         promise.then((image) => {
-          const range = currentQuill.value.getSelection(true);
-          const update = new Delta().retain(range.index).delete(range.length);
-          update.insert({ image });
-          userInput.value = userInput.value.compose(update);
-          currentQuill.value.update();
-          setTimeout(() => {
-            currentQuill.value.setSelection(
-              range.index + 1,
-              Quill.sources.SILENT
-            );
-          }, 50);
-
+          const range = quill.getSelection(true);
+          quill.insertEmbed(range.index, "image", image);
+          quill.setSelection(range.index + 1, Quill.sources.SILENT);
           imageInput.value = null;
         });
       },
