@@ -59,13 +59,7 @@
               />
               <q-btn icon="image" flat @click="imageUpload.pickFiles()" /> -->
             <!-- </div> -->
-            <QuillEditor
-              v-model:content="userInput"
-              theme=""
-              class="col-grow"
-              @ready="setupQL"
-              :options="quillOption"
-            />
+            <div id="editor" class="col"></div>
             <div class="flex col-shrink">
               <q-btn icon="send" @click="sendChat" flat />
             </div>
@@ -96,12 +90,12 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
-import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
-import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import Quill from "quill";
+import "quill/dist/quill.core.css";
 
 export default defineComponent({
   name: "ADHealthEducationPage",
-  components: { QuillEditor },
+  components: {},
   setup() {
     let session_id = null;
 
@@ -127,10 +121,15 @@ export default defineComponent({
     md.use(emoji);
     md.use(markdownItMark);
 
-    const currentQuill = ref(null);
-    const quillOption = ref({
+    let quill = null;
+    const options = {
+      debug: "info",
+      modules: {
+        toolbar: false,
+      },
       placeholder: "Write here.",
-    });
+      theme: "snow",
+    };
 
     function DeltaParser(data) {
       const opsList = data.ops;
@@ -175,6 +174,7 @@ export default defineComponent({
           const { data } = get;
           session_id = data;
           console.log(session_id);
+          quill = new Quill("#editor", options);
         } catch (error) {
           throw Error(error);
         }
@@ -211,7 +211,7 @@ export default defineComponent({
       chatHistoryScroll,
       chatHistory,
       async sendChat() {
-        let res = DeltaParser(userInput.value);
+        let res = DeltaParser(quill.getContents());
         console.log(res);
 
         chatHistory.value.push({
@@ -229,8 +229,7 @@ export default defineComponent({
         formdata.append("chatBotName", "AD");
         formdata.append("chat_history_uuid", session_id);
 
-        userInput.value = new Delta();
-        currentQuill.value.update();
+        quill.setText("");
         try {
           aiThinking.value = true;
           const post = await api.post("/AI/ChatBotLLM", formdata, {
@@ -256,11 +255,6 @@ export default defineComponent({
           aiThinking.value = false;
           throw Error(error);
         }
-      },
-      quillOption,
-      setupQL(quill) {
-        currentQuill.value = quill;
-        userInput.value = currentQuill.value.getContents();
       },
     };
   },
