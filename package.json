@@ -21,6 +21,7 @@
     "github-markdown-css": "^5.6.1",
     "highlight.js": "^11.9.0",
     "markdown-it": "^13.0.2",
+    "markdown-it-attrs": "^4.2.0",
     "markdown-it-emoji": "^2.0.2",
     "markdown-it-mark": "^3.0.1",
     "pinia": "^2.1.3",

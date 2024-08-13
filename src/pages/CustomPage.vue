@@ -345,12 +345,7 @@
           </q-scroll-area>
           <div
             class="q-mt-md outline flex col-grow items-center"
-            style="
-              min-height: 50px;
-              height: auto;
-              /* max-height: 200px; */
-              border-radius: 10px;
-            "
+            style="min-height: 50px; height: auto; border-radius: 10px"
           >
             <div class="flex col-shrink">
               <q-file
@@ -505,6 +500,7 @@ import emoji from "markdown-it-emoji";
 import markdownItMark from "markdown-it-mark";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
+import markdownItAttrs from "markdown-it-attrs";
 import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
 import { QuillEditor, Quill, Delta } from "@vueup/vue-quill";
@@ -589,6 +585,7 @@ export default defineComponent({
     });
     md.use(emoji);
     md.use(markdownItMark);
+    md.use(markdownItAttrs);
 
     const chatHistory = ref([]);
     const chatHistoryScroll = ref(null);
@@ -631,6 +628,31 @@ export default defineComponent({
       }
 
       return hr + ":" + min + ":" + sec;
+    }
+
+    function DeltaParser(data) {
+      const opsList = data.ops;
+      let text = "";
+      let images = [];
+      let mdText = "";
+      for (let i = 0; i < opsList.length; i++) {
+        // console.log(typeof opsList[i].insert);
+        if (typeof opsList[i].insert === "string") {
+          text += opsList[i].insert;
+          mdText += opsList[i].insert;
+        } else {
+          images.push(opsList[i].insert.image);
+          mdText += " ![](" + opsList[i].insert.image + "){height=100}";
+        }
+      }
+      // console.log(text);
+      // console.log(images);
+      // console.log(md.render(mdText));
+      return {
+        text: text,
+        images: images,
+        mdText: mdText,
+      };
     }
 
     function stopStream(stream) {
@@ -743,8 +765,15 @@ export default defineComponent({
           if (checkASR) {
             if (data.stt_status == "FINISHED") {
               sttResult.value = data.stt_result;
-              // userInput.value = data.stt_result;
-              currentQuill.value.setText(data.stt_result);
+              const range = currentQuill.value.getSelection(true);
+              userInput.value = new Delta().insert(data.stt_result);
+              currentQuill.value.update();
+              setTimeout(() => {
+                currentQuill.value.setSelection(
+                  range.index + data.stt_result.length,
+                  Quill.sources.SILENT
+                );
+              }, 50);
 
               $q.notify({
                 position: "top",
@@ -872,7 +901,15 @@ export default defineComponent({
                   label: "帶入",
                   color: "white",
                   handler: () => {
-                    currentQuill.value.setText(data.stt_result);
+                    const range = currentQuill.value.getSelection(true);
+                    userInput.value = new Delta().insert(data.stt_result);
+                    currentQuill.value.update();
+                    setTimeout(() => {
+                      currentQuill.value.setSelection(
+                        range.index + data.stt_result.length,
+                        Quill.sources.SILENT
+                      );
+                    }, 50);
                   },
                 },
               ],
@@ -1362,8 +1399,17 @@ export default defineComponent({
           // const post = await api.get("apitest");
           const { data } = post;
           sttResult.value = data.text;
-          // userInput.value = data.text;
-          currentQuill.value.setText(data.text);
+
+          const range = currentQuill.value.getSelection(true);
+          userInput.value = new Delta().insert(data.text);
+          currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + data.text.length,
+              Quill.sources.SILENT
+            );
+          }, 50);
+
           unSave.value.audio = false;
           unSave.value.asrResult = false;
           if (data.cancelAutoLLM) {
@@ -1379,10 +1425,16 @@ export default defineComponent({
           console.log("err" + error);
           $q.loading.hide();
           sttResult.value = "語音辨識失敗！！！ \n" + error.toString();
-          // userInput.value = "語音辨識失敗！！！ \n" + error.toString();
-          currentQuill.value.setText(
-            "語音辨識失敗！！！ \n" + error.toString()
-          );
+          const text = "語音辨識失敗！！！ \n" + error.toString();
+          const range = currentQuill.value.getSelection(true);
+          userInput.value = new Delta().insert(text);
+          currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + text,
+              Quill.sources.SILENT
+            );
+          }, 50);
         }
       },
       // updSttModel(value) {
@@ -1470,9 +1522,12 @@ export default defineComponent({
       },
       settingDialog: ref(false),
       async sendChat() {
+        // console.log(userInput.value);
+        let res = DeltaParser(userInput.value);
+
         chatHistory.value.push({
           role: "USER",
-          content: md.render(userInput.value),
+          content: md.render(res.mdText),
           // img: userInputImg.value,
         });
         setTimeout(() => {
@@ -1480,7 +1535,12 @@ export default defineComponent({
         }, 500);
         const formdata = new FormData();
         formdata.append("projectID", route.params.projectId);
-        formdata.append("text", userInput.value);
+        formdata.append("text", res.text);
+        res.images.forEach((e) => {
+          formdata.append("image", e);
+        });
+
+        formdata.append("mdText", res.mdText);
         formdata.append("model", llmModel.value.value);
         formdata.append("prompt", prompt.value);
         formdata.append("replyTokens", replyTokens.value);
@@ -1488,12 +1548,9 @@ export default defineComponent({
         if (selectedKB.value) {
           formdata.append("referenceID", selectedKB.value.value);
         }
-        // userInput.value = "";
-        currentQuill.value.setText("");
+        userInput.value = new Delta();
+        currentQuill.value.update();
 
-        // userInputImg.value = null;
-        // imageInput.value = null;
-        // imageBtnDisable.value = false;
         try {
           aiThinking.value = true;
           const post = await api.post("/AI/LLM", formdata, {
@@ -1503,11 +1560,6 @@ export default defineComponent({
           });
           const { data } = post;
           // const data = "Currently no AI response!";
-          // chatHistory.value.push({
-          //   role: "AI",
-          //   content: md.render(data[data.length - 1].content),
-          //   img: null,
-          // });
           chatHistory.value = convertChatHistory(data);
           aiThinking.value = false;
         } catch (error) {
@@ -1581,14 +1633,15 @@ export default defineComponent({
           const range = currentQuill.value.getSelection(true);
           const update = new Delta().retain(range.index).delete(range.length);
           update.insert({ image });
-          console.log(update);
-
           userInput.value = userInput.value.compose(update);
-          currentQuill.value.setSelection(
-            range.index + 1,
-            Quill.sources.SILENT
-          );
           currentQuill.value.update();
+          setTimeout(() => {
+            currentQuill.value.setSelection(
+              range.index + 1,
+              Quill.sources.SILENT
+            );
+          }, 50);
+
           imageInput.value = null;
         });
       },
