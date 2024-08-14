@@ -8,7 +8,7 @@ image:
   repository: bdlai.azurecr.io/smart-doc/web
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "2.0.1c"
+  tag: "2.0.2"
 
 imagePullSecrets: []
 nameOverride: ""
