@@ -47,23 +47,23 @@ ingress:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt
   hosts:
-    - host: smartdoc2.bdlai.org
+    - host: MedBobi2.bdlai.org
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: smartdoc2-tls
+    - secretName: MedBobi2-tls
       hosts:
-        - smartdoc2.bdlai.org
+        - MedBobi2.bdlai.org
   # hosts:
-  #   - host: smartdoc-pre.bdlai.org
+  #   - host: MedBobi-pre.bdlai.org
   #     paths:
   #       - path: /
   #         pathType: ImplementationSpecific
   # tls:
-  #   - secretName: smartdoc-pre-tls
+  #   - secretName: MedBobi-pre-tls
   #     hosts:
-  #       - smartdoc-pre.bdlai.org
+  #       - MedBobi-pre.bdlai.org
 
 resources: {}
 # We usually recommend not to specify default resources and to leave this as a conscious

@@ -1,8 +1,8 @@
 {
-  "name": "doctor-xiaozhi",
+  "name": "medbobi",
   "version": "1.1.10008",
-  "description": "小智醫師",
-  "productName": "小智醫師",
+  "description": "MedBobi",
+  "productName": "MedBobi",
   "author": "Edward <edward70932@gmail.com>",
   "private": true,
   "scripts": {

@@ -11,7 +11,7 @@
           @click="toggleLeftDrawer"
         /> -->
 
-        <q-toolbar-title> 小智醫師 </q-toolbar-title>
+        <q-toolbar-title> MedBobi </q-toolbar-title>
 
         <!-- <div>Quasar v{{ $q.version }}</div> -->
         <!-- <q-btn
