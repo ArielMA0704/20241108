@@ -7,7 +7,7 @@
         flat
         @click="router.go(-1)"
       />
-      <div class="text-h6">管理 prompt 書籤</div>
+      <div class="text-h6">{{ t("managePromptBookmarks") }}</div>
     </div>
     <div style="flex: 1 1 auto" class="flex row full-width">
       <div
@@ -49,22 +49,23 @@
             <img :src="editorItem.avatar" />
           </q-avatar>
           <q-btn
-            label="變更圖片"
+            :label="t('chgIcon')"
             class="q-mt-md"
             @click="
               avatorEditor = true;
               newImgSrc = null;
             "
+            no-caps
           />
         </q-card-section>
         <q-card-section>
           <q-input filled v-model="editorItem.label" label="Title" />
-          <q-toggle v-model="editorItem.public" label="設為公開" />
-          <q-toggle v-model="editorItem.scene" label="設為場景" />
+          <q-toggle v-model="editorItem.public" :label="t('setAsPublic')" />
+          <q-toggle v-model="editorItem.scene" :label="t('設為場景')" />
           <q-input filled v-model="editorItem.prompt" autogrow label="prompt" />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn icon="save" label="儲存" @click="saveprompt" />
+          <q-btn icon="save" label="Save" @click="saveprompt" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -133,7 +134,12 @@
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn label="確定" @click="newImgEdited" v-close-popup />
+          <q-btn
+            :label="t('submit')"
+            no-caps
+            @click="newImgEdited"
+            v-close-popup
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -149,6 +155,7 @@ import { useLoginStore } from "stores/token";
 import { useRouter, useRoute } from "vue-router";
 import VueCropper from "vue-cropperjs";
 import "cropperjs/dist/cropper.css";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "PromptManagementPage",
@@ -159,6 +166,7 @@ export default defineComponent({
     const $q = useQuasar();
     const route = useRoute();
     const router = useRouter();
+    const { t } = useI18n({ useScope: "global" });
     const promptList = ref([]);
     const promptEditor = ref(false);
     const editorItem = ref(null);
@@ -192,6 +200,7 @@ export default defineComponent({
 
     return {
       router,
+      t,
       promptList,
       editorItem,
       promptEditor,

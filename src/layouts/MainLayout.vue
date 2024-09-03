@@ -20,6 +20,13 @@
           target="_blank"
           flat
         /> -->
+        <q-btn
+          :label="locale == 'zh-TW' ? 'EN' : '中文'"
+          flat
+          padding="xs md"
+          style="font-size: 18px"
+          @click="changeLang"
+        />
         <q-btn icon="home" to="/scene" flat v-if="loginStatus" />
         <q-btn
           icon="person"
@@ -44,21 +51,27 @@
             <div class="text-h6">User Setting</div>
             <div class="text-subtitle1">{{ username }}</div>
             <div class="flex column">
-              <q-btn label="管理 prompt 書籤" to="/promptManagement" />
               <q-btn
-                label="管理知識庫"
-                to="/knowledgeManagement"
-                class="q-mt-sm"
+                :label="t('managePromptBookmarks')"
+                to="/promptManagement"
+                no-caps
               />
               <q-btn
-                label="管理後台"
+                :label="t('管理知識庫')"
+                to="/knowledgeManagement"
+                class="q-mt-sm"
+                no-caps
+              />
+              <q-btn
+                :label="t('管理後台')"
+                no-caps
                 to="/ManagementSystem"
                 v-if="userRole == 'ADMIN'"
                 class="q-mt-sm"
               />
             </div>
 
-            <div class="flex q-mt-md">
+            <!-- <div class="flex q-mt-md">
               <div class="flex columns items-center">
                 <div class="text-subtitle1 text-weight-bold">
                   預設回覆長度 (Tokens)：
@@ -96,7 +109,7 @@
                   @change="update_reply_tokens"
                 />
               </div>
-            </div>
+            </div> -->
           </q-card-section>
         </q-card>
       </q-dialog>
@@ -116,6 +129,8 @@ import ReconnectingWebSocket from "reconnecting-websocket";
 import { useQuasar } from "quasar";
 import { api, baseURL } from "boot/axios";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+const langList = import.meta.glob("../../node_modules/quasar/lang/*.js");
 
 export default defineComponent({
   name: "MainLayout",
@@ -131,6 +146,7 @@ export default defineComponent({
     const username = computed(() => loginStore.user);
     const userRole = ref(null);
     const userSetting = ref(false);
+    const { locale, t } = useI18n({ useScope: "global" });
 
     const replyTokens = ref(1000);
 
@@ -171,6 +187,7 @@ export default defineComponent({
     });
 
     return {
+      t,
       leftDrawerOpen,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -218,6 +235,19 @@ export default defineComponent({
         } catch (error) {
           throw Error(error);
         }
+      },
+      locale,
+      changeLang() {
+        if (locale.value == "zh-TW") {
+          locale.value = "en-US";
+        } else {
+          locale.value = "zh-TW";
+        }
+        langList[`../../node_modules/quasar/lang/${locale.value}.js`]().then(
+          (lang) => {
+            $q.lang.set(lang.default);
+          }
+        );
       },
     };
   },

@@ -15,6 +15,23 @@
       <template v-slot:append>
         <q-btn icon="save" flat padding="sm" @click="setDefaultSceneGroup" />
       </template>
+      <template v-slot:selected-item="scope">
+        <q-chip
+          removable
+          dense
+          @remove="scope.removeAtIndex(scope.index)"
+          :tabindex="scope.tabindex"
+        >
+          {{ t(scope.opt) }}
+        </q-chip>
+      </template>
+      <template v-slot:option="scope">
+        <q-item v-bind="scope.itemProps">
+          <q-item-section>
+            <q-item-label>{{ t(scope.opt) }}</q-item-label>
+          </q-item-section>
+        </q-item>
+      </template>
     </q-select>
 
     <div class="flex row full-width justify-start items-stretch">
@@ -40,7 +57,7 @@
               <q-avatar size="110px">
                 <img :src="item.avatar" />
               </q-avatar>
-              <div class="q-mt-md text-center">{{ item.label }}</div>
+              <div class="q-mt-md text-center">{{ t(item.label) }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -56,12 +73,14 @@ import { useQuasar } from "quasar";
 import { getToken, checkLogin, setToken } from "boot/account";
 import { useLoginStore } from "stores/token";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "SceneSelectionPage",
   setup() {
     const $q = useQuasar();
     const route = useRoute();
+    const { t } = useI18n({ useScope: "global" });
     const sceneList = ref([]);
     const tags = ref(["醫師"]);
     const tagsOptions = ref(["醫師", "護理師", "行政人員"]);
@@ -177,6 +196,7 @@ export default defineComponent({
           throw new Error(error);
         }
       },
+      t,
     };
   },
 });

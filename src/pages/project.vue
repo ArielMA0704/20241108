@@ -25,7 +25,7 @@
               filled
               v-model="searchProjectName"
               class="search-input"
-              label="專案名稱"
+              :label="t('專案名稱')"
               clearable
             />
             <!--style="max-width: 600px"-->
@@ -110,7 +110,7 @@
               <q-card-section>
                 <div v-for="col in props.cols" :key="col.name" class="q-mb-sm">
                   <div>
-                    {{ col.label }}
+                    {{ t(col.label) }}
                   </div>
                   <div
                     style="
@@ -151,6 +151,7 @@ import { useQuasar } from "quasar";
 import { setToken, checkLogin, getToken, logout } from "boot/account";
 import dateFormat from "dateformat";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "ProjectPage",
@@ -159,6 +160,7 @@ export default defineComponent({
     const $q = useQuasar();
     const route = useRoute();
     const router = useRouter();
+    const { t } = useI18n({ useScope: "global" });
     const tableRef = ref();
     const columns = ref([
       {
@@ -343,6 +345,7 @@ export default defineComponent({
     });
 
     return {
+      t,
       tableRef,
       columns,
       rows,
