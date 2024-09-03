@@ -82,11 +82,11 @@
                           </div>
             </q-card-section> -->
               <q-card-section class="q-pt-none">
-                <div class="text-h6">大型語言模型</div>
+                <div class="text-h6">{{ t("大型語言模型") }}</div>
                 <div class="flex column full-width outline q-pa-md">
                   <div v-if="sceneType != 'Custom' && sceneType != null">
                     <q-chip color="primary" text-color="white" size="md">
-                      情境：{{ scene_label }}</q-chip
+                      {{ t("情境") }}：{{ t(scene_label) }}</q-chip
                     >
                   </div>
                   <div
@@ -94,7 +94,7 @@
                     v-if="sceneType != 'Custom' && sceneType != null"
                   >
                     <q-select
-                      label="預設提示 (Prompt)"
+                      :label="t('defPrompt')"
                       v-model="defPrompt"
                       :options="filteredPromptOptions"
                       style="min-width: 150px"
@@ -112,28 +112,30 @@
                             <q-icon name="public" v-if="scope.opt.public" />
                           </q-item-section>
                           <q-item-section>
-                            <q-item-label>{{ scope.opt.label }}</q-item-label>
+                            <q-item-label>{{
+                              t(scope.opt.label)
+                            }}</q-item-label>
                           </q-item-section>
                         </q-item>
                       </template>
                       <template v-slot:no-option>
                         <q-item>
                           <q-item-section class="text-italic text-grey">
-                            No options slot
+                            No options...
                           </q-item-section>
                         </q-item>
                       </template>
                     </q-select>
 
                     <q-checkbox
-                      label="顯示公開提示"
+                      :label="t('顯示公開提示')"
                       v-model="publicPrompt"
                       @update:model-value="refreshPromptOption"
                     />
                   </div>
                   <div class="flex items-center" v-else>
                     <q-select
-                      label="預設提示 (Prompt)"
+                      :label="t('defPrompt')"
                       v-model="defPrompt"
                       :options="filteredPromptOptions"
                       style="min-width: 150px"
@@ -150,26 +152,28 @@
                             <q-icon name="public" v-if="scope.opt.public" />
                           </q-item-section>
                           <q-item-section>
-                            <q-item-label>{{ scope.opt.label }}</q-item-label>
+                            <q-item-label>
+                              {{ t(scope.opt.label) }}
+                            </q-item-label>
                           </q-item-section>
                         </q-item>
                       </template>
                       <template v-slot:no-option>
                         <q-item>
                           <q-item-section class="text-italic text-grey">
-                            No options slot
+                            No options...
                           </q-item-section>
                         </q-item>
                       </template>
                     </q-select>
                     <q-btn
-                      label="帶入提示 (Prompt)"
+                      :label="t('insertPrompt')"
                       @click="prompt = defPrompt.value"
                       class="q-ml-md"
                       no-caps
                     />
                     <q-checkbox
-                      label="顯示公開提示"
+                      :label="t('顯示公開提示')"
                       v-model="publicPrompt"
                       @update:model-value="refreshPromptOption"
                     />
@@ -184,7 +188,7 @@
                   </div>
                   <q-input
                     type="textarea"
-                    label="輸入提示 (Prompt)"
+                    :label="t('inputPrompt')"
                     autogrow
                     v-model="prompt"
                     filled
@@ -204,36 +208,28 @@
                   <q-dialog v-model="promptSaveDialog">
                     <q-card>
                       <q-card-section>
-                        <div class="text-h6">設為預設Prompt</div>
+                        <div class="text-h6">{{ t("設為預設Prompt") }}</div>
                         <q-input
-                          label="標題"
+                          :label="t('標題')"
                           v-model="newPrompt.label"
                           filled
                           autogrow
-                          :rules="[(val) => !!val || '請輸入標題']"
+                          :rules="[(val) => !!val || t('askForLabel')]"
                         >
-                          <template v-slot:append>
-                            <!-- <q-btn
-                              icon="casino"
-                              @click="recommendTitle"
-                              round
-                              flat
-                            /> -->
-                          </template>
                         </q-input>
                         <q-checkbox
-                          label="設為公開"
+                          :label="t('setAsPublic')"
                           v-model="newPrompt.public"
                         />
                       </q-card-section>
                       <q-card-actions align="right">
                         <q-btn
-                          label="取消"
+                          :label="t('cancel')"
                           v-close-popup
                           class="bg-red text-white"
                         />
                         <q-btn
-                          label="確定"
+                          :label="t('submit')"
                           v-close-popup
                           @click="promptSave"
                           :disable="!newPrompt.label"
@@ -242,7 +238,7 @@
                     </q-card>
                   </q-dialog>
 
-                  <div class="flex column q-mt-md">
+                  <!-- <div class="flex column q-mt-md">
                     <div>
                       <q-chip square color="primary" text-color="white">
                         回覆長度 (Tokens)：
@@ -272,7 +268,7 @@
                         style="width: 99%"
                       />
                     </div>
-                  </div>
+                  </div> -->
                   <q-select
                     v-model="llmModel"
                     :options="llmOptions"
@@ -282,14 +278,14 @@
                 </div>
               </q-card-section>
               <q-card-section>
-                <div class="text-h6">知識庫</div>
+                <div class="text-h6">{{ t("kb") }}</div>
                 <div class="flex column full-width outline q-pa-md">
                   <q-select
                     clearable
                     filled
                     v-model="selectedKB"
                     :options="KBOptions"
-                    label="選擇知識庫"
+                    :label="t('選擇知識庫')"
                   />
                 </div>
               </q-card-section>
@@ -371,7 +367,7 @@
                   <div class="flex">
                     <div class="q-pa-sm" style="border-radius: 10px">
                       <div class="flex items-center">
-                        <div class="text-h6 text-bold">語音輸入</div>
+                        <div class="text-h6 text-bold">{{ t("語音輸入") }}</div>
                         <!-- <q-chip
                             color="orange"
                             icon="warning"
@@ -468,7 +464,11 @@
 
                     <div v-if="recorded">
                       <div class="flex row items-center q-mt-md">
-                        <q-btn label="進行語音辨識" @click="inference" />
+                        <q-btn
+                          :label="t('進行語音辨識')"
+                          @click="inference"
+                          no-caps
+                        />
                       </div>
                     </div>
                   </div>
@@ -499,6 +499,7 @@ import mime from "mime-types";
 import "github-markdown-css/github-markdown-light.css";
 import Quill from "quill";
 import "quill/dist/quill.core.css";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "IndexPage",
@@ -508,6 +509,7 @@ export default defineComponent({
     const $q = useQuasar();
     const route = useRoute();
     const router = useRouter();
+    const { t } = useI18n({ useScope: "global" });
     const sceneType = ref(null);
     const scene_label = ref(null);
     let mediaRecorder = null;
@@ -879,17 +881,17 @@ export default defineComponent({
             $q.notify({
               position: "top",
               type: "positive",
-              message: "偵測到語音辨識結果，是否帶入?",
+              message: t("askForInsertASRResultOrNot"),
               actions: [
                 {
-                  label: "不帶入",
+                  label: t("不帶入"),
                   color: "white",
                   handler: () => {
                     /* ... */
                   },
                 },
                 {
-                  label: "帶入",
+                  label: t("帶入"),
                   color: "white",
                   handler: () => {
                     quill.setText(data.stt_result);
@@ -1174,6 +1176,7 @@ export default defineComponent({
     };
 
     return {
+      t,
       sceneType,
       scene_label,
       recordingDiag,

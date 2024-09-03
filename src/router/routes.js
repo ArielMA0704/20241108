@@ -20,10 +20,10 @@ const routes = [
       //   path: "task/Surgeon/:projectId",
       //   component: () => import("pages/surgeon.vue"),
       // },
-      {
-        path: "task/Custom/:projectId",
-        component: () => import("pages/CustomPage.vue"),
-      },
+      // {
+      //   path: "task/Custom/:projectId",
+      //   component: () => import("pages/CustomPage.vue"),
+      // },
       {
         path: "task/:sceneType/:projectId",
         component: () => import("pages/IndexPage.vue"),

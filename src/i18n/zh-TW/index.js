@@ -1,0 +1,47 @@
+export default {
+  // Scene
+  醫師: "醫師",
+  護理師: "護理師",
+  行政人員: "行政人員",
+  門診紀錄: "門診紀錄",
+  護理紀錄: "護理紀錄",
+  會議記錄: "會議記錄",
+  住院摘要: "住院摘要",
+  阿茲海默症衛教: "阿茲海默症衛教",
+  使用者自訂: "使用者自訂",
+  // project
+  專案名稱: "專案名稱",
+  創建時間: "創建時間",
+  // indexPage
+  大型語言模型: "大型語言模型",
+  情境: "情境",
+  defPrompt: "預設提示 (Prompt)",
+  顯示公開提示: "顯示公開提示",
+  insertPrompt: "帶入提示 (Prompt)",
+  inputPrompt: "輸入提示 (Prompt)",
+  設為預設Prompt: "設為預設Prompt",
+  標題: "標題",
+  askForLabel: "請輸入標題",
+  setAsPublic: "設為公開",
+  cancel: "取消",
+  submit: "確定",
+  kb: "知識庫",
+  選擇知識庫: "選擇知識庫",
+  語音輸入: "語音輸入",
+  進行語音辨識: "進行語音辨識",
+  askForInsertASRResultOrNot: "偵測到語音辨識結果，是否帶入?",
+  不帶入: "不帶入",
+  帶入: "帶入",
+  // MainLayout
+  managePromptBookmarks: "管理 prompt 書籤",
+  管理知識庫: "管理知識庫",
+  管理後台: "管理後台",
+  // promptManagement
+  設為場景: "設為場景",
+  chgIcon: "變更圖片",
+  // KnowledgeBaseManagement
+  docUsuageMessage: "目前已上傳 {usuage} 份文件，剩餘 {remain} 份文件",
+  知識庫名稱: "知識庫名稱",
+  文件數: "文件數",
+  建立知識庫: "建立知識庫",
+};

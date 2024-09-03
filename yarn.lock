@@ -1004,6 +1004,27 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
+"@intlify/core-base@10.0.0-beta.6":
+  version "10.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/@intlify/core-base/-/core-base-10.0.0-beta.6.tgz#f6f89104b5e0d2c62280a4a283f8f2c0f169e4d8"
+  integrity sha512-rP7pgznz5Vn4A1U18SdlYdKXo5eItoLdWNETDDauBOH76TQ2vmqb2hkTDn6JSh0EEYeHPOqrcnrGEmE8Rc9DzQ==
+  dependencies:
+    "@intlify/message-compiler" "10.0.0-beta.6"
+    "@intlify/shared" "10.0.0-beta.6"
+
+"@intlify/message-compiler@10.0.0-beta.6":
+  version "10.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/@intlify/message-compiler/-/message-compiler-10.0.0-beta.6.tgz#c4b991df105cb7414c5edfe73a0ed0269372805e"
+  integrity sha512-zsChZ15nY73vJMHJPAK5yGM/w9EJxnDiiT+br+7F6052exRUrUUvKrLkvoP3daeMwsE768zVhKqqS439cd4aZw==
+  dependencies:
+    "@intlify/shared" "10.0.0-beta.6"
+    source-map-js "^1.0.2"
+
+"@intlify/shared@10.0.0-beta.6":
+  version "10.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/@intlify/shared/-/shared-10.0.0-beta.6.tgz#f51ba75c506a700b6e6f645585d6f5d0f51a5301"
+  integrity sha512-Bz5aiS62ovE/27EpKDT+oFhr2ZYLkjKHuVI4NWz2C+bOuqBkFR20CJgBcmdm2GiAHMdyQfuhY+ThBv1XyHXk3A==
+
 "@jridgewell/gen-mapping@^0.3.0", "@jridgewell/gen-mapping@^0.3.2":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@jridgewell/gen-mapping/-/gen-mapping-0.3.3.tgz#7e02e6eb5df901aaedb08514203b096614024098"
@@ -4889,6 +4910,15 @@ vue-eslint-parser@^9.3.0:
     esquery "^1.4.0"
     lodash "^4.17.21"
     semver "^7.3.6"
+
+vue-i18n@^10.0.0-beta.6:
+  version "10.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/vue-i18n/-/vue-i18n-10.0.0-beta.6.tgz#d2b35c54962c8da4a9b4c4c55c3e1913c028f65e"
+  integrity sha512-LHP+ykIw7KHtu83zJMrP3NIV5JTz7eokC0ovFYn4FNXW4F9eEXup9ZjUj7SWgkgUJcgxtTYXGowxsRSu2K/6aQ==
+  dependencies:
+    "@intlify/core-base" "10.0.0-beta.6"
+    "@intlify/shared" "10.0.0-beta.6"
+    "@vue/devtools-api" "^6.5.0"
 
 vue-router@4:
   version "4.3.2"

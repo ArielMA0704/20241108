@@ -19,9 +19,12 @@
           @request="onRequest"
         >
           <template v-slot:top-left>
-            目前已上傳 {{ referencePermission.usuage }} 份文件，剩餘{{
-              referencePermission.remain
-            }}份文件
+            {{
+              t("docUsuageMessage", {
+                usuage: referencePermission.usuage,
+                remain: referencePermission.remain,
+              })
+            }}
           </template>
           <template v-slot:top-right>
             <div class="flex no-wrap">
@@ -32,46 +35,18 @@
                 dense
                 clearable
                 class="q-ml-sm"
-                label="知識庫名稱"
+                :label="t('知識庫名稱')"
                 @update:model-value="searchKBnameCB"
               />
             </div>
           </template>
-          <!-- <template v-slot:header-cell-username="props">
-            <q-th :props="props">
-              <div class="flex column">
-                <div>{{ props.col.label }}</div>
-                <q-input
-                  v-model="searchUsername"
-                  filled
-                  dense
-                  clearable
-                  class="q-mt-sm"
-                  @update:model-value="searchUsernameCB"
-                />
-              </div>
-            </q-th>
-          </template> -->
-          <!-- <template v-slot:header-cell-role="props">
-            <q-th :props="props">
-              <div class="flex column">
-                <div>{{ props.col.label }}</div>
-                <q-select
-                  filled
-                  dense
-                  v-model="searchRole"
-                  :options="roleOptions"
-                  class="q-mt-sm"
-                  clearable
-                  @update:model-value="
-                    onRequest({
-                      pagination: pagination,
-                    })
-                  "
-                />
-              </div>
-            </q-th>
-          </template> -->
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th v-for="col in props.cols" :key="col.name" :props="props">
+                {{ t(col.label) }}
+              </q-th>
+            </q-tr>
+          </template>
           <template v-slot:body-cell-kbname="props">
             <q-td :props="props" class="flex column items-start justify-center">
               <div>
@@ -189,69 +164,6 @@
             </q-item>
           </q-list>
         </div>
-
-        <!-- <div class="q-mt-md q-ml-md">
-          <div class="text-h5">{{ currentUser.username }}</div>
-          <div class="text-h6 q-mt-md flex items-center">
-            <div>角色:</div>
-            <q-select
-              filled
-              dense
-              v-model="currentUser.role"
-              :options="roleOptions"
-              class="q-ml-md"
-              @update:model-value="updateUserInfo"
-              v-if="loginUser != currentUser.username"
-            />
-            <div v-else class="q-ml-sm">{{ currentUser.role }}</div>
-          </div>
-          <div class="text-h6">
-            回覆長度: {{ currentUser.permission.reply_tokens }}
-          </div>
-          <div>
-            <div class="text-h6">參考資料:</div>
-
-            <div class="q-ml-md">
-              <div class="flex items-center">
-                <div>已上傳:</div>
-                <q-input
-                  v-model.number="currentUser.permission.references.usuage"
-                  type="number"
-                  style="width: 100px"
-                  class="q-ml-sm"
-                  dense
-                  filled
-                  readonly
-                />
-              </div>
-              <div class="flex items-center q-mt-md">
-                <div>最大上傳數:</div>
-                <q-input
-                  v-model.number="currentUser.permission.references.limit"
-                  type="number"
-                  style="width: 100px"
-                  class="q-ml-sm"
-                  dense
-                  filled
-                  @update:model-value="updateUserInfo"
-                />
-              </div>
-            </div>
-          </div>
-          <div class="text-h6 q-mt-md flex items-center">
-            <div>剩餘AI次數(-1 代表未限制使用):</div>
-            <q-input
-              v-model.number="currentUser.permission.ai_point"
-              type="number"
-              style="width: 100px"
-              class="q-ml-sm"
-              dense
-              filled
-              @update:model-value="updateUserInfo"
-              @blur="checkResetOrNot"
-            />
-          </div>
-        </div> -->
       </div>
     </div>
   </q-page>
@@ -264,12 +176,14 @@ import { useQuasar } from "quasar";
 import { getToken, checkLogin, setToken } from "boot/account";
 import { useLoginStore } from "stores/token";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "KnowledgeManagementPage",
   setup() {
     const $q = useQuasar();
     const route = useRoute();
+    const { t } = useI18n({ useScope: "global" });
     const tableRef = ref();
     const columns = ref([
       {
@@ -392,8 +306,8 @@ export default defineComponent({
 
     async function addKB() {
       $q.dialog({
-        title: "建立知識庫",
-        message: "知識庫名稱",
+        title: t("建立知識庫"),
+        message: t("知識庫名稱"),
         prompt: {
           model: "",
           isValid: (val) => val.length > 2,
@@ -591,6 +505,7 @@ export default defineComponent({
     });
 
     return {
+      t,
       tableRef,
       columns,
       rows,
