@@ -7,9 +7,9 @@ import axios from "axios";
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-// const baseURL = "https://MedBobi-api.bdlai.org/v1/";
-// const baseURL = "https://MedBobi-api-pre.bdlai.org/v1/";
-const baseURL = "https://smartdoc2-api.bdlai.org/v1/";
+const baseURL = "https://medbobi-api.bdlai.org/v1/";
+// const baseURL = "https://medbobi-api-pre.bdlai.org/v1/";
+// const baseURL = "https://smartdoc2-api.bdlai.org/v1/";
 // const baseURL = "https://dn-api-dev.bdlai.org/v1/";
 const api = axios.create({
   baseURL: baseURL,
