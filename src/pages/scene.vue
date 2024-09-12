@@ -42,8 +42,18 @@
         class="col-xs-6 col-sm q-pa-xs"
       >
         <!-- q-pa-xs -->
-        <q-card class="full-height" flat bordered>
+        <q-card class="full-height">
+          <!-- flat bordered -->
+
+          <q-img :src="item.avatar" @click="toProject(item.name)">
+            <!-- class="child001" -->
+
+            <div class="absolute-bottom">
+              <div class="text-h6">{{ t(item.label) }}</div>
+            </div>
+          </q-img>
           <q-card-actions align="right">
+            <div class="col-grow">{{ item.count }} project(s)</div>
             <q-btn
               flat
               round
@@ -52,14 +62,14 @@
               @click="toggleFavorite(item)"
             />
           </q-card-actions>
-          <q-card-section @click="toProject(item.name)">
-            <div class="flex column justify-center items-center content-center">
+          <!-- <q-card-section @click="toProject(item.name)"> -->
+          <!-- <div class="flex column justify-center items-center content-center">
               <q-avatar size="110px">
                 <img :src="item.avatar" />
               </q-avatar>
               <div class="q-mt-md text-center">{{ t(item.label) }}</div>
-            </div>
-          </q-card-section>
+            </div> -->
+          <!-- </q-card-section> -->
         </q-card>
       </div>
     </div>
@@ -201,7 +211,7 @@ export default defineComponent({
   },
 });
 </script>
-<style data-type="scss" scoped>
+<style data-type="scss">
 /* @media (min-width: 0px) {
   .row {
     .col-xs-6 {
