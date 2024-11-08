@@ -83,9 +83,9 @@ module.exports = configure(function (/* ctx */) {
       // https: true,
       port: 9400,
       open: false, // opens browser window automatically
-      hmr: {
-        clientPort: 443,
-      },
+      // hmr: {
+      //   clientPort: 443,
+      // },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

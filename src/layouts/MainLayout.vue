@@ -1,50 +1,78 @@
 <template>
   <q-layout view="hHh lpr lFf">
-    <q-header elevated>
+    <q-header elevated class="bg-teal-600">
       <q-toolbar>
-        <!-- <q-btn
+        <q-toolbar-title class="brand">MedBobi</q-toolbar-title>
+
+        <!-- Navigation Items -->
+        <div class="nav-buttons gt-sm">
+          <q-btn
+            v-for="item in navItems"
+            :key="item.title"
+            flat
+            no-caps
+            padding="sm lg"
+            :label="item.title"
+          >
+            <q-menu v-if="item.subItems" auto-close>
+              <q-list style="min-width: 200px">
+                <q-item
+                  v-for="subItem in item.subItems"
+                  :key="subItem.title"
+                  clickable
+                  v-close-popup
+                  @click="navigate(subItem.link)"
+                >
+                  <q-item-section>{{ subItem.title }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <q-btn
           flat
           dense
           round
           icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        /> -->
-
-        <q-toolbar-title> MedBobi </q-toolbar-title>
-
-        <!-- <div>Quasar v{{ $q.version }}</div> -->
-        <!-- <q-btn
-          icon="menu_book"
-          href="https://docs.google.com/presentation/d/1wL_j06Y5lCcvbNYDVTFwaP6YBcCxxrasB5AZis01mUY/edit#slide=id.g25c602d94f5_0_285"
-          target="_blank"
-          flat
-        /> -->
-        <q-btn
-          :label="locale == 'zh-TW' ? 'EN' : '中文'"
-          flat
-          padding="xs md"
-          style="font-size: 18px"
-          @click="changeLang"
+          class="lt-md"
+          @click="drawerRight = !drawerRight"
         />
+
+        <!-- Language Selector -->
+        <q-btn-dropdown
+          flat
+          :label="selectedLanguage"
+          style="margin-right: 16px"
+        >
+          <q-list>
+            <q-item
+              v-for="lang in languages"
+              :key="lang.code"
+              clickable
+              v-close-popup
+              @click="selectLanguage(lang)"
+            >
+              <q-item-section>
+                <q-item-label>{{ lang.name }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+
+        <!-- User Actions -->
         <q-btn icon="home" to="/scene" flat v-if="loginStatus" />
         <q-btn
           icon="person"
           flat
           v-if="loginStatus"
           @click="userSetting = true"
-        >
-          <!-- <q-menu>
-            <div class="row no-wrap q-pa-md">
-              <div class="column">
-                <q-btn label="Account Setting" />
-              </div>
-            </div>
-          </q-menu> -->
-        </q-btn>
-        <!-- @click="logoutFunc" -->
+        />
         <q-btn icon="logout" flat v-if="loginStatus" @click="logoutFunc" />
       </q-toolbar>
+
+      <!-- User Settings Dialog -->
       <q-dialog v-model="userSetting" @before-show="initUserSetting">
         <q-card>
           <q-card-section>
@@ -70,50 +98,33 @@
                 class="q-mt-sm"
               />
             </div>
-
-            <!-- <div class="flex q-mt-md">
-              <div class="flex columns items-center">
-                <div class="text-subtitle1 text-weight-bold">
-                  預設回覆長度 (Tokens)：
-                </div>
-                <q-btn
-                  icon="sym_r_info"
-                  flat
-                  round
-                  padding="xs"
-                  @click="
-                    $q.dialog({
-                      title: 'Tokens',
-                      message:
-                        '一個英文詞可能為 2 至 4 個 token，一個中文字可能為 1 至 3 個 token',
-                      ok: false,
-                    })
-                  "
-                />
-              </div>
-              <div></div>
-              <div class="flex full-width justify-center">
-                <q-slider
-                  v-model="replyTokens"
-                  :min="20"
-                  :max="3000"
-                  label
-                  :marker-labels="[
-                    { value: 20, label: 20 },
-                    { value: 1000, label: 1000 },
-                    { value: 2000, label: 2000 },
-                    { value: 3000, label: 3000 },
-                  ]"
-                  switch-label-side
-                  style="width: 95%"
-                  @change="update_reply_tokens"
-                />
-              </div>
-            </div> -->
           </q-card-section>
         </q-card>
       </q-dialog>
     </q-header>
+
+    <!-- Mobile Navigation Drawer -->
+    <q-drawer v-model="drawerRight" side="right" bordered>
+      <q-list>
+        <q-expansion-item
+          v-for="item in navItems"
+          :key="item.title"
+          :label="item.title"
+          :caption="item.subItems ? '展開子選單' : ''"
+        >
+          <q-list v-if="item.subItems">
+            <q-item
+              v-for="subItem in item.subItems"
+              :key="subItem.title"
+              clickable
+              @click="navigate(subItem.link)"
+            >
+              <q-item-section>{{ subItem.title }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-expansion-item>
+      </q-list>
+    </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -135,10 +146,8 @@ const langList = import.meta.glob("../../node_modules/quasar/lang/*.js");
 export default defineComponent({
   name: "MainLayout",
 
-  components: {},
-
   setup() {
-    const leftDrawerOpen = ref(false);
+    const router = useRouter();
     const loginStore = useLoginStore();
     const loginStatus = computed(() => loginStore.login);
     const $q = useQuasar();
@@ -147,16 +156,69 @@ export default defineComponent({
     const userRole = ref(null);
     const userSetting = ref(false);
     const { locale, t } = useI18n({ useScope: "global" });
+    const drawerRight = ref(false);
 
-    const replyTokens = ref(1000);
+    // 導航項目
+    const navItems = ref([
+      { 
+        title: t('首頁'), 
+        link: '/'
+      },
+      { 
+        title: t('關於我們'), 
+        link: '/about',
+        subItems: [
+          { title: '公司簡介', link: '/about/intro' },
+          { title: '經營理念', link: '/about/philosophy' },
+          { title: '團隊成員', link: '/about/team' }
+        ]
+      },
+      { 
+        title: t('服務項目'), 
+        link: '/services',
+        subItems: [
+          { title: '門診紀錄', link: '/services/clinic' },
+          { title: '護理紀錄', link: '/services/nursing' },
+          { title: '會議紀錄', link: '/services/meeting' },
+          { title: '住院摘要', link: '/services/hospitalization' },
+          { title: '衛教諮詢', link: '/services/consultation' }
+        ]
+      },
+      { 
+        title: t('聯絡我們'), 
+        link: '/contact'
+      }
+    ]);
 
+    // 語言選項
+    const languages = ref([
+      { code: 'zh-TW', name: '中文' },
+      { code: 'en-US', name: 'English' },
+    ]);
+    
+    const selectedLanguage = computed(() => {
+      return locale.value === 'zh-TW' ? '中文' : 'English';
+    });
+
+    function selectLanguage(lang) {
+      locale.value = lang.code;
+      langList[`../../node_modules/quasar/lang/${lang.code}.js`]().then(
+        (lang) => {
+          $q.lang.set(lang.default);
+        }
+      );
+    }
+
+    function navigate(link) {
+      router.push(link);
+    }
+
+    // 其他原有功能...
     function wsConnect(username) {
       var ws = new ReconnectingWebSocket(
         baseURL.replace("https", "wss") + "ws/" + username
       );
-      // console.log(ws);
       ws.onmessage = (event) => {
-        // console.log(event);
         const data = JSON.parse(event.data);
         $q.notify({
           position: "top",
@@ -164,10 +226,6 @@ export default defineComponent({
           message: data.msg,
         });
       };
-      // ws.onclose = function () {
-      //   console.log("connection closed");
-      //   wsConnect(username);
-      // };
     }
 
     onMounted(async () => {
@@ -181,75 +239,53 @@ export default defineComponent({
           wsConnect(username.value);
         } else {
           loginStore.setValue(false, null);
-          // loginStatus.value = false;
         }
       }
     });
 
     return {
-      t,
-      leftDrawerOpen,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-      },
+      navItems,
+      languages,
+      selectedLanguage,
+      selectLanguage,
+      navigate,
+      drawerRight,
       loginStatus,
+      username,
+      userSetting,
+      userRole,
+      t,
       logoutFunc() {
         loginStatus.value = false;
         google.accounts.id.disableAutoSelect();
         logout();
       },
-      username,
-      userSetting,
-      userRole,
-      isPwd: ref(true),
       initUserSetting() {
         const token = getToken();
         if (token) {
           const userInfo = JSON.parse(atob(token.split(".")[1]));
-          const sso = userInfo.sso;
-          const permission = userInfo.permission;
-          console.log(userInfo);
           userRole.value = userInfo.role;
-          if (permission.reply_tokens) {
-            replyTokens.value = permission.reply_tokens;
-          }
         }
-      },
-      replyTokens,
-      async update_reply_tokens(value) {
-        // console.log(value);
-        try {
-          const post = await api.post(
-            "/Account/replyTokens",
-            {
-              tokens: value,
-            },
-            {
-              headers: {
-                Authorization: "Bearer " + getToken(),
-              },
-            }
-          );
-          const { data } = post;
-          setToken(data.ltt, data.stt);
-        } catch (error) {
-          throw Error(error);
-        }
-      },
-      locale,
-      changeLang() {
-        if (locale.value == "zh-TW") {
-          locale.value = "en-US";
-        } else {
-          locale.value = "zh-TW";
-        }
-        langList[`../../node_modules/quasar/lang/${locale.value}.js`]().then(
-          (lang) => {
-            $q.lang.set(lang.default);
-          }
-        );
       },
     };
   },
 });
 </script>
+
+<style scoped>
+.brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 1023px) {
+  .nav-buttons {
+    display: none;
+  }
+}
+</style>
